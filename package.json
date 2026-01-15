@@ -16,11 +16,7 @@
     "react": ">=18.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Am25-Studio/am-gate-client.git"
+    "registry": "https://git.am25.app/api/packages/AM25/npm/"
   },
   "keywords": [
     "oauth2",
