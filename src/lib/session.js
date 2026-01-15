@@ -1,20 +1,18 @@
 import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import { cache } from "react";
+import { verifyTokenWithJWKS } from "./jwks.js";
 
 /**
  * Crea helpers de sesión para Server Components
  *
  * @param {Object} options
- * @param {string} options.jwtSecret - Secret para verificar el JWT
+ * @param {string} options.issuer - URL del servidor Gate (ej: "https://gate.am25.app")
  * @param {string} options.cookieName - Nombre de la cookie (default: "am25_sess")
  */
 export function createSessionHelpers(options) {
-  const { jwtSecret, cookieName = "am25_sess" } = options;
+  const { issuer, cookieName = "am25_sess" } = options;
 
-  if (!jwtSecret) throw new Error("jwtSecret is required");
-
-  const secretKey = new TextEncoder().encode(jwtSecret);
+  if (!issuer) throw new Error("issuer is required");
 
   /**
    * Obtiene la sesión actual (cached por request)
@@ -27,7 +25,7 @@ export function createSessionHelpers(options) {
 
       if (!token) return null;
 
-      const { payload } = await jwtVerify(token, secretKey);
+      const payload = await verifyTokenWithJWKS(token, issuer);
       return payload;
     } catch {
       return null;
@@ -122,5 +120,3 @@ export function createSessionHelpers(options) {
     requireRole,
   };
 }
-
-export { createSessionHelpers as getSession, createSessionHelpers as getUser };

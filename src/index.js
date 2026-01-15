@@ -10,3 +10,6 @@ export { createSessionHelpers } from "./lib/session.js";
 
 // Utilidades de autenticación
 export { getLoginUrl, getLogoutUrl, createAuthConfig } from "./lib/auth.js";
+
+// JWKS utilities
+export { verifyTokenWithJWKS, clearJWKSCache } from "./lib/jwks.js";

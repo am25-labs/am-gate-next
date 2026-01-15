@@ -1,35 +1,30 @@
 import { NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+import { verifyTokenWithJWKS } from "./lib/jwks.js";
 
 /**
  * Crea un proxy de autenticación para Next.js 16
  *
  * @param {Object} options
- * @param {string} options.jwtSecret - Secret para verificar el JWT
- * @param {string} options.cookieName - Nombre de la cookie de sesión (default: basado en dominio)
+ * @param {string} options.issuer - URL del servidor Gate (ej: "https://gate.am25.app")
+ * @param {string} options.cookieName - Nombre de la cookie de sesión (default: "am25_sess")
  * @param {string[]} options.protectedPaths - Rutas protegidas (default: ["/dashboard"])
  * @param {string[]} options.publicPaths - Rutas públicas dentro de protectedPaths (ej: ["/dashboard/public"])
- * @param {string} options.loginUrl - URL de login en Gate (ej: "https://gate.am25.app/login")
  * @param {string} options.clientId - Client ID de la app en Gate
  * @param {string} options.redirectUri - URI de callback (ej: "https://myapp.am25.app/api/auth/callback")
  */
 export function createGateProxy(options) {
   const {
-    jwtSecret,
+    issuer,
     cookieName = "am25_sess",
     protectedPaths = ["/dashboard"],
     publicPaths = [],
-    loginUrl,
     clientId,
     redirectUri,
   } = options;
 
-  if (!jwtSecret) throw new Error("jwtSecret is required");
-  if (!loginUrl) throw new Error("loginUrl is required");
+  if (!issuer) throw new Error("issuer is required");
   if (!clientId) throw new Error("clientId is required");
   if (!redirectUri) throw new Error("redirectUri is required");
-
-  const secretKey = new TextEncoder().encode(jwtSecret);
 
   return async function gateProxy(request) {
     const { pathname } = request.nextUrl;
@@ -50,23 +45,23 @@ export function createGateProxy(options) {
     const token = request.cookies.get(cookieName)?.value;
 
     if (!token) {
-      return redirectToLogin(request, loginUrl, clientId, redirectUri);
+      return redirectToLogin(request, issuer, clientId, redirectUri);
     }
 
     try {
-      await jwtVerify(token, secretKey);
+      await verifyTokenWithJWKS(token, issuer);
       return null; // Sesión válida, continuar
     } catch {
-      return redirectToLogin(request, loginUrl, clientId, redirectUri);
+      return redirectToLogin(request, issuer, clientId, redirectUri);
     }
   };
 }
 
-function redirectToLogin(request, loginUrl, clientId, redirectUri) {
+function redirectToLogin(request, issuer, clientId, redirectUri) {
   const returnTo = request.nextUrl.pathname + request.nextUrl.search;
   const state = Buffer.from(JSON.stringify({ returnTo })).toString("base64url");
 
-  const authUrl = new URL("/oauth/authorize", loginUrl.replace("/login", ""));
+  const authUrl = new URL("/oauth/authorize", issuer);
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");

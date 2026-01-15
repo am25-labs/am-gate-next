@@ -8,6 +8,7 @@ SDK server-side de autenticación OAuth2 para integrar aplicaciones Next.js 16+ 
 - Proxy para Next.js 16: Protección de rutas a nivel servidor
 - Cookie httpOnly: Sesión segura compartida por dominio
 - Helpers React: Funciones cacheadas para Server Components
+- RS256 (Clave asimétrica): Verificación de tokens sin compartir secrets
 
 ## Instalación
 
@@ -28,12 +29,11 @@ GATE_CLIENT_ID=tu-client-id
 GATE_CLIENT_SECRET=tu-client-secret
 GATE_REDIRECT_URI=https://miapp.am25.app/api/auth/callback
 
-# JWT (mismo secret que Gate usa para firmar tokens)
-JWT_SECRET=tu-jwt-secret
-
 # Cookie
 COOKIE_DOMAIN=.am25.app
 ```
+
+**Nota:** Ya no necesitas `JWT_SECRET`. Los tokens se verifican usando la clave pública de Gate (JWKS).
 
 ### 2. Crear API Routes
 
@@ -79,13 +79,11 @@ Crear `src/proxy.js`:
 import { createGateProxy } from "@am25/gate-client";
 
 const gateProxy = createGateProxy({
-  jwtSecret: process.env.JWT_SECRET,
-  loginUrl: process.env.GATE_ISSUER + "/login",
+  issuer: process.env.GATE_ISSUER,
   clientId: process.env.GATE_CLIENT_ID,
   redirectUri: process.env.GATE_REDIRECT_URI,
   protectedPaths: ["/dashboard", "/settings"],
   publicPaths: ["/dashboard/public"],
-  cookieDomain: process.env.COOKIE_DOMAIN,
 });
 
 export async function proxy(request) {
@@ -113,7 +111,7 @@ export const {
   hasRole,
   requireRole,
 } = createSessionHelpers({
-  jwtSecret: process.env.JWT_SECRET,
+  issuer: process.env.GATE_ISSUER,
   cookieName: "am25_sess",
 });
 ```
@@ -192,8 +190,7 @@ Crea un proxy para proteger rutas en Next.js 16.
 
 | Opción           | Tipo     | Requerido | Descripción                                  |
 | ---------------- | -------- | --------- | -------------------------------------------- |
-| `jwtSecret`      | string   | ✓         | Secret para verificar JWT                    |
-| `loginUrl`       | string   | ✓         | URL de login en Gate                         |
+| `issuer`         | string   | ✓         | URL del servidor Gate                        |
 | `clientId`       | string   | ✓         | Client ID de la app                          |
 | `redirectUri`    | string   | ✓         | URI de callback                              |
 | `protectedPaths` | string[] |           | Rutas a proteger (default: `["/dashboard"]`) |
@@ -228,6 +225,11 @@ Crea el handler para cerrar sesión.
 ### `createSessionHelpers(options)`
 
 Crea helpers para acceder a la sesión en Server Components.
+
+| Opción       | Tipo   | Requerido | Descripción                                  |
+| ------------ | ------ | --------- | -------------------------------------------- |
+| `issuer`     | string | ✓         | URL del servidor Gate                        |
+| `cookieName` | string |           | Nombre de la cookie (default: `"am25_sess"`) |
 
 Retorna:
 
@@ -291,6 +293,7 @@ Los campos `id`, `isAdmin` y `roles` siempre están incluidos.
          │                       │ <─────────────────────│
          │                       │                       │
          │                       │ 6. Retorna tokens     │
+         │                       │    (firmados RS256)   │
          │                       │ ─────────────────────>│
          │                       │                       │
          │ 7. Cookie httpOnly    │                       │
@@ -299,7 +302,28 @@ Los campos `id`, `isAdmin` y `roles` siempre están incluidos.
          │ 8. Redirect a /dashboard                     │
          │    (ahora con cookie válida)                 │
          │                       │                       │
+         │ 9. Verifica token     │                       │
+         │    usando JWKS        │                       │
+         │ ──────────────────────>                      │
+         │                       │                       │
+         │ 10. Retorna clave     │                       │
+         │     pública (cached)  │                       │
+         │ <──────────────────── │                       │
 ```
+
+## Verificación de tokens (RS256)
+
+El SDK verifica los tokens usando la clave pública de Gate, obtenida del endpoint JWKS:
+
+```
+GET https://gate.am25.app/.well-known/jwks.json
+```
+
+**Ventajas:**
+- No necesitas compartir `JWT_SECRET` con las apps cliente
+- Solo Gate tiene la clave privada (firma tokens)
+- Las apps cliente solo necesitan la clave pública (verifica tokens)
+- La clave pública se cachea automáticamente
 
 ## Cookies por dominio
 
@@ -313,6 +337,7 @@ Cada dominio tiene su propia sesión, no se cruzan.
 ## Notas
 
 - La cookie es `httpOnly` y `secure` en producción
-- Los tokens se verifican con el mismo `JWT_SECRET` que usa Gate
+- Los tokens se verifican usando JWKS (clave pública de Gate)
 - Las funciones de sesión están cacheadas por request (React `cache()`)
+- El JWKS se cachea en memoria para evitar llamadas repetidas
 - El proxy retorna `null` para continuar, o `NextResponse` para redirigir
