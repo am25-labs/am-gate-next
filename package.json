@@ -1,6 +1,6 @@
 {
   "name": "@am25/gate-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SDK de autenticación OAuth2 para AM25 Gate (Next.js 16+)",
   "type": "module",
   "main": "./src/index.js",
