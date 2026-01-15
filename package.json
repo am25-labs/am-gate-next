@@ -1,19 +1,21 @@
 {
   "name": "@am25/gate-client",
-  "version": "1.0.0",
-  "description": "SDK de autenticación OAuth2 para AM25 Gate",
+  "version": "2.0.0",
+  "description": "SDK de autenticación OAuth2 para AM25 Gate (Next.js 16+)",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js",
-    "./middleware": "./src/middleware.js"
+    ".": "./src/index.js"
   },
   "files": [
     "src"
   ],
+  "dependencies": {
+    "jose": "^5.0.0"
+  },
   "peerDependencies": {
-    "next": ">=14.0.0",
-    "react": ">=18.0.0"
+    "next": ">=16.0.0",
+    "react": ">=19.0.0"
   },
   "publishConfig": {
     "registry": "https://git.am25.app/api/packages/AM25/npm/"

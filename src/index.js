@@ -1,17 +1,12 @@
-// Provider y hooks
-export { AuthProvider, useAuth, useUser } from "./provider.jsx";
+// Proxy para Next.js 16
+export { createGateProxy, gateProxy } from "./proxy.js";
 
-// Configuración
-export { configure, getConfig, getEndpoints } from "./lib/client.js";
+// Handlers para API routes
+export { createCallbackHandler, handleCallback } from "./handlers/callback.js";
+export { createLogoutHandler, handleLogout } from "./handlers/logout.js";
 
-// Utilidades de tokens
-export {
-  saveTokens,
-  getTokens,
-  clearTokens,
-  isTokenExpired,
-  decodeToken,
-} from "./lib/tokens.js";
+// Helpers server-side
+export { createSessionHelpers } from "./lib/session.js";
 
-// PKCE
-export { generateCodeVerifier, generateCodeChallenge } from "./lib/pkce.js";
+// Utilidades de autenticación
+export { getLoginUrl, getLogoutUrl, createAuthConfig } from "./lib/auth.js";
