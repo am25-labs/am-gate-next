@@ -31,6 +31,7 @@ export function createCallbackHandler(options) {
   if (!redirectUri) throw new Error("redirectUri is required");
 
   const tokenEndpoint = `${issuer.replace(/\/$/, "")}/oauth/token`;
+  const appOrigin = new URL(redirectUri).origin;
 
   return async function handleCallback(request) {
     const { searchParams } = request.nextUrl;
@@ -38,22 +39,18 @@ export function createCallbackHandler(options) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
-    // Manejar errores de OAuth
     if (error) {
       const errorDescription = searchParams.get("error_description") || error;
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(errorDescription)}`, request.url)
+        `${appOrigin}/login?error=${encodeURIComponent(errorDescription)}`
       );
     }
 
     if (!code) {
-      return NextResponse.redirect(
-        new URL("/login?error=missing_code", request.url)
-      );
+      return NextResponse.redirect(`${appOrigin}/login?error=missing_code`);
     }
 
     try {
-      // Intercambiar code por tokens
       const tokenResponse = await fetch(tokenEndpoint, {
         method: "POST",
         headers: {
@@ -72,13 +69,12 @@ export function createCallbackHandler(options) {
         const errorData = await tokenResponse.json().catch(() => ({}));
         console.error("Token exchange failed:", errorData);
         return NextResponse.redirect(
-          new URL("/login?error=token_exchange_failed", request.url)
+          `${appOrigin}/login?error=token_exchange_failed`
         );
       }
 
       const tokens = await tokenResponse.json();
 
-      // Determinar la URL de redirección
       let redirectTo = defaultRedirect;
       if (state) {
         try {
@@ -93,8 +89,7 @@ export function createCallbackHandler(options) {
         }
       }
 
-      // Crear respuesta con cookie
-      const response = NextResponse.redirect(new URL(redirectTo, request.url));
+      const response = NextResponse.redirect(`${appOrigin}${redirectTo}`);
 
       response.cookies.set(cookieName, tokens.access_token, {
         httpOnly: true,
@@ -108,9 +103,7 @@ export function createCallbackHandler(options) {
       return response;
     } catch (error) {
       console.error("Callback handler error:", error);
-      return NextResponse.redirect(
-        new URL("/login?error=callback_failed", request.url)
-      );
+      return NextResponse.redirect(`${appOrigin}/login?error=callback_failed`);
     }
   };
 }
