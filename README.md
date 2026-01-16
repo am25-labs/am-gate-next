@@ -233,8 +233,8 @@ Crea helpers para acceder a la sesión en Server Components.
 
 Retorna:
 
-- `getSession()` - Payload completo del JWT
-- `getUser()` - Datos del usuario formateados
+- `getSession()` - Payload raw del JWT (usa `session.sub` para el ID)
+- `getUser()` - Datos del usuario formateados (usa `user.id` para el ID)
 - `isAuthenticated()` - Boolean
 - `requireAuth()` - Lanza error si no autenticado
 - `requireAdmin()` - Lanza error si no es admin
@@ -267,6 +267,30 @@ Genera la URL para iniciar el flujo OAuth.
 ```
 
 Los campos `id`, `isAdmin` y `roles` siempre están incluidos.
+
+### Diferencia entre getSession y getUser
+
+| Función        | Retorna                | ID del usuario  |
+| -------------- | ---------------------- | --------------- |
+| `getSession()` | Payload raw del JWT    | `session.sub`   |
+| `getUser()`    | Objeto formateado      | `user.id`       |
+
+**En Server Actions**, usa `getUser()` si necesitas `user.id`:
+
+```js
+import { getUser } from "@/lib/auth";
+
+export async function createPost(data) {
+  const user = await getUser();
+
+  await prisma.post.create({
+    data: {
+      ...data,
+      authorId: user.id  // ✅ correcto
+    }
+  });
+}
+```
 
 ## Flujo de autenticación
 
