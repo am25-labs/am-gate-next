@@ -62,6 +62,7 @@ export async function GET(request) {
 import { createLogoutHandler } from "@am25/gate-client";
 
 const handler = createLogoutHandler({
+  issuer: process.env.GATE_ISSUER,  // Habilita logout federado
   cookieDomain: process.env.COOKIE_DOMAIN,
   redirectTo: "/",
 });
@@ -70,6 +71,8 @@ export async function GET(request) {
   return handler(request);
 }
 ```
+
+> **Nota:** Al pasar `issuer`, el logout también cierra la sesión en Gate (logout federado). Esto evita el re-login automático silencioso.
 
 ### 3. Configurar Proxy (Next.js 16)
 
@@ -216,11 +219,14 @@ Crea el handler para intercambiar el code por tokens.
 
 Crea el handler para cerrar sesión.
 
-| Opción         | Tipo   | Descripción                             |
-| -------------- | ------ | --------------------------------------- |
-| `cookieName`   | string | Nombre de la cookie                     |
-| `cookieDomain` | string | Dominio de la cookie                    |
-| `redirectTo`   | string | URL después del logout (default: `"/"`) |
+| Opción         | Tipo   | Descripción                                                  |
+| -------------- | ------ | ------------------------------------------------------------ |
+| `issuer`       | string | URL del servidor Gate (habilita logout federado)             |
+| `cookieName`   | string | Nombre de la cookie                                          |
+| `cookieDomain` | string | Dominio de la cookie                                         |
+| `redirectTo`   | string | URL después del logout (default: `"/"`)                      |
+
+**Logout federado:** Si pasas `issuer`, el logout redirige a Gate para cerrar la sesión global, evitando re-login silencioso.
 
 ### `createSessionHelpers(options)`
 
