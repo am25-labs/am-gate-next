@@ -44,7 +44,7 @@ export function createSessionHelpers(options) {
       id: session.sub,
       email: session.email,
       name: session.name,
-      lastName: session.family_name,
+      lastName: session.lastName,
       isAdmin: session.isAdmin,
       roles: session.roles || [],
     };
