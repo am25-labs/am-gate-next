@@ -6,6 +6,7 @@ SDK server-side de autenticación OAuth2 para integrar aplicaciones Next.js 16+ 
 
 - 100% Server-Side: Sin AuthProvider, sin CSR forzado
 - Proxy para Next.js 16: Protección de rutas a nivel servidor
+- Control de acceso por app: Solo usuarios autorizados pueden acceder a cada aplicación
 - Cookie httpOnly: Sesión segura compartida por dominio
 - Helpers React: Funciones cacheadas para Server Components
 - RS256 (Clave asimétrica): Verificación de tokens sin compartir secrets
@@ -201,6 +202,8 @@ Crea un proxy para proteger rutas en Next.js 16.
 | `publicPaths`    | string[] |           | Rutas públicas dentro de protectedPaths      |
 | `cookieName`     | string   |           | Nombre de la cookie (default: `"am25_sess"`) |
 
+**Control de acceso:** El proxy verifica automáticamente que el usuario tenga acceso a la aplicación. Si el usuario no tiene permiso (configurado en Gate), retorna un error 403. Los administradores tienen acceso a todas las aplicaciones.
+
 ### `createCallbackHandler(options)`
 
 Crea el handler para intercambiar el code por tokens.
@@ -271,10 +274,13 @@ Genera la URL para iniciar el flujo OAuth.
   lastName: "Apellido",    // Apellido
   isAdmin: false,          // Si es administrador
   roles: ["editor"],       // Array de keys de roles
+  allowedClients: ["client-id-1", "client-id-2"], // Apps a las que tiene acceso
 }
 ```
 
-Los campos `id`, `isAdmin` y `roles` siempre están incluidos.
+Los campos `id`, `isAdmin`, `roles` y `allowedClients` siempre están incluidos.
+
+**Nota:** `allowedClients` es `"*"` para administradores (acceso a todas las apps).
 
 ### Diferencia entre getSession y getUser
 
@@ -366,6 +372,24 @@ Las apps comparten sesión por dominio:
 
 Cada dominio tiene su propia sesión, no se cruzan.
 
+## Control de acceso por aplicación
+
+Gate permite configurar qué usuarios tienen acceso a cada aplicación. El proxy verifica automáticamente este permiso:
+
+1. **Administradores**: Tienen acceso a todas las aplicaciones
+2. **Usuarios normales**: Solo pueden acceder a las aplicaciones asignadas en Gate
+
+Si un usuario sin acceso intenta entrar a una app protegida, el proxy retorna:
+
+```json
+{
+  "error": "access_denied",
+  "message": "No tienes acceso a esta aplicación"
+}
+```
+
+Con status HTTP 403.
+
 ## Notas
 
 - La cookie es `httpOnly` y `secure` en producción
@@ -373,3 +397,4 @@ Cada dominio tiene su propia sesión, no se cruzan.
 - Las funciones de sesión están cacheadas por request (React `cache()`)
 - El JWKS se cachea en memoria para evitar llamadas repetidas
 - El proxy retorna `null` para continuar, o `NextResponse` para redirigir
+- El control de acceso se valida en cada request a rutas protegidas
