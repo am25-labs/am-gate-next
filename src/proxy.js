@@ -49,8 +49,17 @@ export function createGateProxy(options) {
     }
 
     try {
-      await verifyTokenWithJWKS(token, issuer);
-      return null; // Sesión válida, continuar
+      const payload = await verifyTokenWithJWKS(token, issuer);
+
+      const allowed = payload.allowedClients;
+      if (allowed !== "*" && !allowed?.includes(clientId)) {
+        return NextResponse.json(
+          { error: "access_denied", message: "No tienes acceso a esta aplicación" },
+          { status: 403 }
+        );
+      }
+
+      return null;
     } catch {
       return redirectToLogin(request, issuer, clientId, redirectUri);
     }
