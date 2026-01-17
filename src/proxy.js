@@ -53,10 +53,8 @@ export function createGateProxy(options) {
 
       const allowed = payload.allowedClients;
       if (allowed !== "*" && !allowed?.includes(clientId)) {
-        return NextResponse.json(
-          { error: "access_denied", message: "No tienes acceso a esta aplicación" },
-          { status: 403 }
-        );
+        const unauthorizedUrl = new URL("/unauthorized", issuer);
+        return NextResponse.redirect(unauthorizedUrl);
       }
 
       return null;

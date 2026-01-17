@@ -379,16 +379,7 @@ Gate permite configurar qué usuarios tienen acceso a cada aplicación. El proxy
 1. **Administradores**: Tienen acceso a todas las aplicaciones
 2. **Usuarios normales**: Solo pueden acceder a las aplicaciones asignadas en Gate
 
-Si un usuario sin acceso intenta entrar a una app protegida, el proxy retorna:
-
-```json
-{
-  "error": "access_denied",
-  "message": "No tienes acceso a esta aplicación"
-}
-```
-
-Con status HTTP 403.
+Si un usuario sin acceso intenta entrar a una app protegida, el proxy lo redirige a `{issuer}/unauthorized` donde Gate muestra una página amigable de acceso denegado.
 
 ## Notas
 
