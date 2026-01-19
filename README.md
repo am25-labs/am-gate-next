@@ -381,6 +381,60 @@ Gate permite configurar qué usuarios tienen acceso a cada aplicación. El proxy
 
 Si un usuario sin acceso intenta entrar a una app protegida, el proxy lo redirige a `{issuer}/unauthorized` donde Gate muestra una página amigable de acceso denegado.
 
+## API de Gate
+
+### GET /api/users
+
+Retorna la lista de usuarios registrados en Gate. Requiere autenticación.
+
+**Respuesta:**
+
+```json
+[
+  {
+    "id": "cuid123",
+    "email": "usuario@ejemplo.com",
+    "name": "Juan",
+    "lastName": "Pérez",
+    "isAdmin": false,
+    "roles": [
+      {
+        "role": {
+          "id": "cuid456",
+          "key": "editor",
+          "name": "Editor"
+        }
+      }
+    ],
+    "clientAccess": [
+      {
+        "client": {
+          "id": "cuid789",
+          "clientId": "flowboard-client-id",
+          "name": "Flowboard"
+        }
+      }
+    ]
+  }
+]
+```
+
+**Filtrar usuarios por acceso a una app:**
+
+```js
+const users = await fetch(`${GATE_ISSUER}/api/users`, {
+  headers: { Authorization: `Bearer ${token}` },
+}).then((r) => r.json());
+
+const appClientId = process.env.GATE_CLIENT_ID;
+
+const usersWithAccess = users.filter(
+  (user) =>
+    user.isAdmin ||
+    user.clientAccess.some((access) => access.client.clientId === appClientId)
+);
+```
+
 ## Notas
 
 - La cookie es `httpOnly` y `secure` en producción
