@@ -266,6 +266,8 @@ Genera la URL para iniciar el flujo OAuth.
 
 ## Datos del usuario
 
+El objeto retornado por `getUser()` tiene esta estructura:
+
 ```js
 {
   id: "user-id",           // ID único (sub del JWT)
@@ -274,13 +276,10 @@ Genera la URL para iniciar el flujo OAuth.
   lastName: "Apellido",    // Apellido
   isAdmin: false,          // Si es administrador
   roles: ["editor"],       // Array de keys de roles
-  allowedClients: ["client-id-1", "client-id-2"], // Apps a las que tiene acceso
 }
 ```
 
-Los campos `id`, `isAdmin`, `roles` y `allowedClients` siempre están incluidos.
-
-**Nota:** `allowedClients` es `"*"` para administradores (acceso a todas las apps).
+Los campos `id`, `isAdmin` y `roles` siempre están incluidos.
 
 ### Diferencia entre getSession y getUser
 
@@ -387,6 +386,8 @@ Si un usuario sin acceso intenta entrar a una app protegida, el proxy lo redirig
 
 Retorna la lista de usuarios registrados en Gate. Requiere autenticación.
 
+> **Importante:** El formato de `roles` en este endpoint es diferente al de `getUser()`. Aquí viene la estructura completa de Prisma, mientras que `getUser()` retorna solo un array de strings con las keys.
+
 **Respuesta:**
 
 ```json
@@ -417,6 +418,13 @@ Retorna la lista de usuarios registrados en Gate. Requiere autenticación.
     ]
   }
 ]
+```
+
+**Extraer roles como array de strings (igual que getUser):**
+
+```js
+const userRoles = user.roles.map((r) => r.role.key);
+// Resultado: ["editor"]
 ```
 
 **Filtrar usuarios por acceso a una app:**
