@@ -216,7 +216,7 @@ Crea el handler para intercambiar el code por tokens.
 | `redirectUri`     | string | ✓         | URI de callback                                  |
 | `cookieName`      | string |           | Nombre de la cookie                              |
 | `cookieDomain`    | string |           | Dominio de la cookie (ej: `.am25.app`)           |
-| `cookieMaxAge`    | number |           | Duración en segundos (default: 7 días)           |
+| `cookieMaxAge`    | number |           | Duración en segundos (default: 30 días)          |
 | `defaultRedirect` | string |           | Ruta después del login (default: `"/dashboard"`) |
 
 ### `createLogoutHandler(options)`

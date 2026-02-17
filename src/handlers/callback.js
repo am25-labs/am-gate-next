@@ -21,7 +21,7 @@ export function createCallbackHandler(options) {
     redirectUri,
     cookieName = "am25_sess",
     cookieDomain,
-    cookieMaxAge = 60 * 60 * 24 * 7, // 7 días
+    cookieMaxAge = 60 * 60 * 24 * 30, // 30 días
     defaultRedirect = "/dashboard",
   } = options;
 
@@ -91,7 +91,7 @@ export function createCallbackHandler(options) {
 
       const response = NextResponse.redirect(`${appOrigin}${redirectTo}`);
 
-      response.cookies.set(cookieName, tokens.access_token, {
+      response.cookies.set(cookieName, tokens.session_token || tokens.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
