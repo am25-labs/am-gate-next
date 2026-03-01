@@ -21,13 +21,19 @@ function getJWKS(issuer) {
  * Verifica un JWT usando JWKS remoto
  * @param {string} token - JWT a verificar
  * @param {string} issuer - URL del servidor Gate
+ * @param {string} [expectedTyp] - Tipo esperado del token (ej: "at+jwt", "st+jwt")
  * @returns {Promise<Object>} Payload del token
  */
-export async function verifyTokenWithJWKS(token, issuer) {
+export async function verifyTokenWithJWKS(token, issuer, expectedTyp) {
   const JWKS = getJWKS(issuer);
-  const { payload } = await jwtVerify(token, JWKS, {
+  const { payload, protectedHeader } = await jwtVerify(token, JWKS, {
     issuer: issuer.replace(/\/$/, ""),
   });
+  if (expectedTyp && protectedHeader.typ !== expectedTyp) {
+    throw new Error(
+      `Expected token type ${expectedTyp}, got ${protectedHeader.typ}`
+    );
+  }
   return payload;
 }
 

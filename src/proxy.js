@@ -49,7 +49,7 @@ export function createGateProxy(options) {
     }
 
     try {
-      const payload = await verifyTokenWithJWKS(token, issuer);
+      const payload = await verifyTokenWithJWKS(token, issuer, "st+jwt");
 
       const allowed = payload.allowedClients;
       if (allowed !== "*" && !allowed?.includes(clientId)) {

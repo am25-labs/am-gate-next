@@ -25,7 +25,7 @@ export function createSessionHelpers(options) {
 
       if (!token) return null;
 
-      const payload = await verifyTokenWithJWKS(token, issuer);
+      const payload = await verifyTokenWithJWKS(token, issuer, "st+jwt");
       return payload;
     } catch {
       return null;
