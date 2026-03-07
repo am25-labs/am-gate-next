@@ -49,14 +49,7 @@ export function createGateProxy(options) {
     }
 
     try {
-      const payload = await verifyTokenWithJWKS(token, issuer, "st+jwt");
-
-      const allowed = payload.allowedClients;
-      if (allowed !== "*" && !allowed?.includes(clientId)) {
-        const unauthorizedUrl = new URL("/unauthorized", issuer);
-        return NextResponse.redirect(unauthorizedUrl);
-      }
-
+      await verifyTokenWithJWKS(token, issuer, "st+jwt");
       return null;
     } catch {
       return redirectToLogin(request, issuer, clientId, redirectUri);

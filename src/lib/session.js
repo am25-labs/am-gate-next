@@ -36,6 +36,9 @@ export function createSessionHelpers(options) {
    * Obtiene el usuario de la sesión actual
    * @returns {Promise<Object|null>} Datos del usuario o null
    */
+  const nsIsAdmin = `${issuer.replace(/\/$/, "")}/is_admin`;
+  const nsRoles = `${issuer.replace(/\/$/, "")}/roles`;
+
   const getUser = cache(async () => {
     const session = await getSession();
     if (!session) return null;
@@ -45,8 +48,8 @@ export function createSessionHelpers(options) {
       email: session.email,
       name: session.name,
       lastName: session.lastName,
-      isAdmin: session.isAdmin,
-      roles: session.roles || [],
+      isAdmin: session[nsIsAdmin] ?? false,
+      roles: session[nsRoles] ?? [],
     };
   });
 
