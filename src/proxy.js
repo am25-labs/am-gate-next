@@ -20,6 +20,7 @@ export function createGateProxy(options) {
     publicPaths = [],
     clientId,
     redirectUri,
+    scopes = ["openid", "profile", "email"],
   } = options;
 
   if (!issuer) throw new Error("issuer is required");
@@ -45,19 +46,19 @@ export function createGateProxy(options) {
     const token = request.cookies.get(cookieName)?.value;
 
     if (!token) {
-      return redirectToLogin(request, issuer, clientId, redirectUri);
+      return redirectToLogin(request, issuer, clientId, redirectUri, scopes);
     }
 
     try {
       await verifyTokenWithJWKS(token, issuer, "st+jwt");
       return null;
     } catch {
-      return redirectToLogin(request, issuer, clientId, redirectUri);
+      return redirectToLogin(request, issuer, clientId, redirectUri, scopes);
     }
   };
 }
 
-function redirectToLogin(request, issuer, clientId, redirectUri) {
+function redirectToLogin(request, issuer, clientId, redirectUri, scopes) {
   const returnTo = request.nextUrl.pathname + request.nextUrl.search;
   const state = Buffer.from(JSON.stringify({ returnTo })).toString("base64url");
 
@@ -65,7 +66,7 @@ function redirectToLogin(request, issuer, clientId, redirectUri) {
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", "openid profile email");
+  authUrl.searchParams.set("scope", scopes.join(" "));
   authUrl.searchParams.set("state", state);
 
   return NextResponse.redirect(authUrl);
