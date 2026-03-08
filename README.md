@@ -105,7 +105,7 @@ const gateProxy = createGateProxy({
   redirectUri: process.env.GATE_REDIRECT_URI,
   protectedPaths: ["/dashboard", "/settings"],
   publicPaths: ["/dashboard/public"],
-  // scopes: ["openid", "profile", "email", "roles"], // opcional
+  // scopes: ["openid", "profile", "email", "roles"], // default
 });
 
 export async function proxy(request) {
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
 
 ### Verificar roles
 
-Los roles solo estan disponibles si el token fue emitido con el scope `roles`. Configura el scope en el proxy o en `getLoginUrl`.
+Los roles estan disponibles por defecto (scope `roles` incluido). Si por alguna razon necesitas excluirlos, configura `scopes` sin `"roles"` en el proxy o en `getLoginUrl`.
 
 ```jsx
 import { requireRole, hasRole } from "@/lib/auth";
@@ -207,7 +207,7 @@ export function LoginButton() {
       clientId: process.env.NEXT_PUBLIC_GATE_CLIENT_ID,
       redirectUri: process.env.NEXT_PUBLIC_GATE_REDIRECT_URI,
       returnTo: "/dashboard",
-      // scopes: ["openid", "profile", "email", "roles"],
+      // scopes: ["openid", "profile", "email", "roles"], // default
     });
     window.location.href = url;
   };
@@ -235,11 +235,7 @@ Gate soporta los siguientes scopes OIDC:
 | `email`   | `email`                                     |
 | `roles`   | `{issuer}/is_admin`, `{issuer}/roles`       |
 
-El scope por defecto es `openid profile email`. Si necesitas roles, agrega `roles`:
-
-```js
-scopes: ["openid", "profile", "email", "roles"]
-```
+El scope por defecto es `openid profile email roles`.
 
 Los claims de roles usan namespace URI para compatibilidad con el estandar OIDC. El SDK los resuelve automaticamente en `getUser()`.
 
@@ -281,7 +277,7 @@ Crea un proxy para proteger rutas en Next.js 16.
 | `protectedPaths` | string[] | No        | `["/dashboard"]`                 | Rutas a proteger                         |
 | `publicPaths`    | string[] | No        | `[]`                             | Rutas publicas dentro de protectedPaths  |
 | `cookieName`     | string   | No        | `"am25_sess"`                    | Nombre de la cookie                      |
-| `scopes`         | string[] | No        | `["openid", "profile", "email"]` | Scopes a solicitar en el redirect        |
+| `scopes`         | string[] | No        | `["openid", "profile", "email", "roles"]` | Scopes a solicitar en el redirect        |
 
 Retorna `null` si la ruta no necesita proteccion o la sesion es valida. Retorna `NextResponse.redirect` si necesita autenticacion.
 
@@ -348,7 +344,7 @@ Genera la URL para iniciar el flujo OAuth.
 | `issuer`      | string   | Si        |                                  | URL del servidor Gate                  |
 | `clientId`    | string   | Si        |                                  | Client ID                              |
 | `redirectUri` | string   | Si        |                                  | URI de callback                        |
-| `scopes`      | string[] | No        | `["openid", "profile", "email"]` | Scopes a solicitar                     |
+| `scopes`      | string[] | No        | `["openid", "profile", "email", "roles"]` | Scopes a solicitar                     |
 | `returnTo`    | string   | No        |                                  | Ruta a la que volver despues del login |
 
 ### `getLogoutUrl(options)`
@@ -483,7 +479,7 @@ Se configura en el dashboard de Gate al crear o editar un cliente.
 
 ### Breaking changes en v2.0
 
-1. **Scopes configurables:** El proxy y `getLoginUrl` aceptan un parametro `scopes`. El default es `["openid", "profile", "email"]`. Si necesitas roles, agrega `"roles"` explicitamente.
+1. **Scopes configurables:** El proxy y `getLoginUrl` aceptan un parametro `scopes`. El default es `["openid", "profile", "email", "roles"]`.
 
 2. **Claims con namespace:** Los claims `isAdmin` y `roles` usan namespace URI en el token raw (`{issuer}/is_admin`, `{issuer}/roles`). `getUser()` los resuelve automaticamente, pero si usas `getSession()` debes actualizar:
 

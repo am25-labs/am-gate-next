@@ -1,6 +1,6 @@
 {
   "name": "@am25/gate-client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "SDK de autenticación OAuth2+OIDC de AM25",
   "type": "module",
   "main": "./src/index.js",

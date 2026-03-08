@@ -14,7 +14,7 @@ export function getLoginUrl(options) {
     issuer,
     clientId,
     redirectUri,
-    scopes = ["openid", "profile", "email"],
+    scopes = ["openid", "profile", "email", "roles"],
     returnTo,
   } = options;
 
