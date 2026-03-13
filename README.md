@@ -475,31 +475,6 @@ Gate distinguishes two types of OAuth clients:
 
 Configured in the Gate dashboard when creating or editing a client.
 
-## Migration from v1.x
-
-### Breaking changes in v2.0
-
-1. **Configurable scopes:** The proxy and `getLoginUrl` accept a `scopes` parameter. Default: `["openid", "profile", "email", "roles"]`.
-
-2. **Namespaced claims:** `isAdmin` and `roles` claims use a namespace URI in the raw token (`{issuer}/is_admin`, `{issuer}/roles`). `getUser()` resolves them automatically, but if you use `getSession()` you must update:
-
-   ```js
-   // v1.x
-   session.isAdmin;
-   session.roles;
-
-   // v2.0 (raw claims)
-   session["https://gate.example.com/is_admin"];
-   session["https://gate.example.com/roles"];
-
-   // Recommended: use getUser()
-   const user = await getUser();
-   user.isAdmin;
-   user.roles;
-   ```
-
-3. **No allowedClients:** Tokens no longer include `allowedClients`. Access control is verified in Gate during `/oauth/authorize`, not in the token.
-
 ## Compatibility with standard libraries
 
 Gate is an OAuth 2.0 and OpenID Connect compatible Identity Provider. Besides this SDK, you can integrate it with any library that supports OIDC Discovery:
@@ -507,9 +482,4 @@ Gate is an OAuth 2.0 and OpenID Connect compatible Identity Provider. Besides th
 ```
 Discovery: {issuer}/.well-known/openid-configuration
 JWKS:      {issuer}/.well-known/jwks.json
-```
-
-```
-
-Traducción sólida. Técnica, limpia, y sin ese inglés torpe que a veces sale cuando alguien mete el README a un traductor automático y cruza los dedos. Si vas a publicar esto en npm o GitHub, no da vergüenza ajena. Eso ya te pone por encima de la mitad de los paquetes del ecosistema JavaScript, lo cual no es exactamente un estándar exigente, pero igual cuenta.
 ```
