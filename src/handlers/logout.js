@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
 /**
- * Crea el handler para /api/auth/logout
+ * Create the handler for /api/auth/logout
  *
  * @param {Object} options
- * @param {string} options.issuer - URL del servidor Gate (requerido para logout federado)
- * @param {string} options.redirectUri - URI de callback de la app (ej: "https://miapp.am25.app/api/auth/callback")
- * @param {string} options.cookieName - Nombre de la cookie (default: "am25_sess")
- * @param {string} options.cookieDomain - Dominio de la cookie (ej: ".am25.app")
- * @param {string} options.redirectTo - Ruta después del logout (default: "/")
+ * @param {string} options.issuer - Gate server URL (required for federated logout)
+ * @param {string} options.redirectUri - Callback URI of the app (e.g., "https://miapp.example.com/api/auth/callback")
+ * @param {string} options.cookieName - Cookie name (default: "am25_sess")
+ * @param {string} options.cookieDomain - Cookie domain (e.g., ".example.com")
+ * @param {string} options.redirectTo - Route after logout (default: "/")
  */
 export function createLogoutHandler(options = {}) {
   const {
@@ -28,7 +28,10 @@ export function createLogoutHandler(options = {}) {
 
     if (issuer) {
       const gateLogoutUrl = new URL("/oauth/logout", issuer);
-      gateLogoutUrl.searchParams.set("redirect_uri", `${appOrigin}${redirectTo}`);
+      gateLogoutUrl.searchParams.set(
+        "redirect_uri",
+        `${appOrigin}${redirectTo}`,
+      );
       finalRedirect = gateLogoutUrl.toString();
     } else {
       finalRedirect = `${appOrigin}${redirectTo}`;

@@ -3,11 +3,11 @@ import { cache } from "react";
 import { verifyTokenWithJWKS } from "./jwks.js";
 
 /**
- * Crea helpers de sesión para Server Components
+ * Create session helpers for Server Components
  *
  * @param {Object} options
- * @param {string} options.issuer - URL del servidor Gate (ej: "https://gate.am25.app")
- * @param {string} options.cookieName - Nombre de la cookie (default: "am25_sess")
+ * @param {string} options.issuer - Gate server URL (e.g., "https://gate.example.com")
+ * @param {string} options.cookieName - Cookie name (default: "am25_sess")
  */
 export function createSessionHelpers(options) {
   const { issuer, cookieName = "am25_sess" } = options;
@@ -15,8 +15,8 @@ export function createSessionHelpers(options) {
   if (!issuer) throw new Error("issuer is required");
 
   /**
-   * Obtiene la sesión actual (cached por request)
-   * @returns {Promise<Object|null>} Payload del token o null si no hay sesión
+   * Gets the current session (cached per request)
+   * @returns {Promise<Object|null>} Token payload or null if there is no session
    */
   const getSession = cache(async () => {
     try {
@@ -33,8 +33,8 @@ export function createSessionHelpers(options) {
   });
 
   /**
-   * Obtiene el usuario de la sesión actual
-   * @returns {Promise<Object|null>} Datos del usuario o null
+   * Gets the user from the current session
+   * @returns {Promise<Object|null>} User data or null
    */
   const nsIsAdmin = `${issuer.replace(/\/$/, "")}/is_admin`;
   const nsRoles = `${issuer.replace(/\/$/, "")}/roles`;
@@ -54,7 +54,7 @@ export function createSessionHelpers(options) {
   });
 
   /**
-   * Verifica si hay una sesión activa
+   * Verifies if there is an active session
    * @returns {Promise<boolean>}
    */
   const isAuthenticated = async () => {
@@ -63,34 +63,34 @@ export function createSessionHelpers(options) {
   };
 
   /**
-   * Requiere autenticación, lanza error si no hay sesión
-   * @returns {Promise<Object>} Datos del usuario
-   * @throws {Error} Si no hay sesión válida
+   * Requires authentication, throws error if no session is found
+   * @returns {Promise<Object>} User data
+   * @throws {Error} If no valid session is found
    */
   const requireAuth = async () => {
     const user = await getUser();
     if (!user) {
-      throw new Error("No autenticado");
+      throw new Error("Not authenticated");
     }
     return user;
   };
 
   /**
-   * Requiere que el usuario sea admin
-   * @returns {Promise<Object>} Datos del usuario
-   * @throws {Error} Si no es admin
+   * Requires the user to be admin
+   * @returns {Promise<Object>} User data
+   * @throws {Error} If the user is not an admin
    */
   const requireAdmin = async () => {
     const user = await requireAuth();
     if (!user.isAdmin) {
-      throw new Error("No autorizado");
+      throw new Error("Not authorized");
     }
     return user;
   };
 
   /**
-   * Verifica si el usuario tiene un rol específico
-   * @param {string} roleKey - Key del rol a verificar
+   * Verifies if the user has a specific role
+   * @param {string} roleKey - Key of the role to verify
    * @returns {Promise<boolean>}
    */
   const hasRole = async (roleKey) => {
@@ -100,15 +100,15 @@ export function createSessionHelpers(options) {
   };
 
   /**
-   * Requiere un rol específico
-   * @param {string} roleKey - Key del rol requerido
-   * @returns {Promise<Object>} Datos del usuario
-   * @throws {Error} Si no tiene el rol
+   * Requires a specific role
+   * @param {string} roleKey - Key of the role required
+   * @returns {Promise<Object>} User data
+   * @throws {Error} If the user does not have the role
    */
   const requireRole = async (roleKey) => {
     const user = await requireAuth();
     if (!user.roles.includes(roleKey)) {
-      throw new Error(`Rol requerido: ${roleKey}`);
+      throw new Error(`Role required: ${roleKey}`);
     }
     return user;
   };

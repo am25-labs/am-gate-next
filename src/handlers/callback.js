@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
 /**
- * Crea el handler para /api/auth/callback
+ * Create the handler for /api/auth/callback
  *
  * @param {Object} options
- * @param {string} options.issuer - URL del servidor Gate (ej: "https://gate.am25.app")
- * @param {string} options.clientId - Client ID de la app
- * @param {string} options.clientSecret - Client Secret de la app
- * @param {string} options.redirectUri - URI de callback (debe coincidir con Gate)
- * @param {string} options.cookieName - Nombre de la cookie (default: "am25_sess")
- * @param {string} options.cookieDomain - Dominio de la cookie (ej: ".am25.app")
- * @param {number} options.cookieMaxAge - Duración en segundos (default: 7 días)
- * @param {string} options.defaultRedirect - Ruta por defecto después del login (default: "/dashboard")
+ * @param {string} options.issuer - Gate server URL (e.g., "https://gate.example.com")
+ * @param {string} options.clientId - Client ID of the app
+ * @param {string} options.clientSecret - Client Secret of the app
+ * @param {string} options.redirectUri - Callback URI (must match Gate)
+ * @param {string} options.cookieName - Cookie name (default: "am25_sess")
+ * @param {string} options.cookieDomain - Cookie domain (e.g., ".example.com")
+ * @param {number} options.cookieMaxAge - Duration in seconds (default: 7 days)
+ * @param {string} options.defaultRedirect - Default route after login (default: "/dashboard")
  */
 export function createCallbackHandler(options) {
   const {
@@ -21,7 +21,7 @@ export function createCallbackHandler(options) {
     redirectUri,
     cookieName = "am25_sess",
     cookieDomain,
-    cookieMaxAge = 60 * 60 * 24 * 30, // 30 días
+    cookieMaxAge = 60 * 60 * 24 * 30, // 30 days
     defaultRedirect = "/dashboard",
   } = options;
 
@@ -42,7 +42,7 @@ export function createCallbackHandler(options) {
     if (error) {
       const errorDescription = searchParams.get("error_description") || error;
       return NextResponse.redirect(
-        `${appOrigin}/login?error=${encodeURIComponent(errorDescription)}`
+        `${appOrigin}/login?error=${encodeURIComponent(errorDescription)}`,
       );
     }
 
@@ -69,7 +69,7 @@ export function createCallbackHandler(options) {
         const errorData = await tokenResponse.json().catch(() => ({}));
         console.error("Token exchange failed:", errorData);
         return NextResponse.redirect(
-          `${appOrigin}/login?error=token_exchange_failed`
+          `${appOrigin}/login?error=token_exchange_failed`,
         );
       }
 
@@ -79,26 +79,30 @@ export function createCallbackHandler(options) {
       if (state) {
         try {
           const stateData = JSON.parse(
-            Buffer.from(state, "base64url").toString()
+            Buffer.from(state, "base64url").toString(),
           );
           if (stateData.returnTo) {
             redirectTo = stateData.returnTo;
           }
         } catch {
-          // Estado inválido, usar default
+          // Invalid state, use default
         }
       }
 
       const response = NextResponse.redirect(`${appOrigin}${redirectTo}`);
 
-      response.cookies.set(cookieName, tokens.session_token || tokens.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        domain: cookieDomain,
-        maxAge: cookieMaxAge,
-        path: "/",
-      });
+      response.cookies.set(
+        cookieName,
+        tokens.session_token || tokens.access_token,
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          domain: cookieDomain,
+          maxAge: cookieMaxAge,
+          path: "/",
+        },
+      );
 
       return response;
     } catch (error) {

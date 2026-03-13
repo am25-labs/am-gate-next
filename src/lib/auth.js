@@ -1,13 +1,13 @@
 /**
- * Genera la URL de login para redirigir a Gate
+ * Generate the login URL to redirect to Gate
  *
  * @param {Object} options
- * @param {string} options.issuer - URL del servidor Gate
- * @param {string} options.clientId - Client ID de la app
- * @param {string} options.redirectUri - URI de callback
- * @param {string[]} options.scopes - Scopes a solicitar (default: openid, profile, email)
- * @param {string} options.returnTo - Ruta a la que volver después del login
- * @returns {string} URL completa de autorización
+ * @param {string} options.issuer - URL of the Gate server
+ * @param {string} options.clientId - Client ID of the app
+ * @param {string} options.redirectUri - Callback URI
+ * @param {string[]} options.scopes - Scopes to request (default: openid, profile, email)
+ * @param {string} options.returnTo - Path to return to after login
+ * @returns {string} Complete authorization URL
  */
 export function getLoginUrl(options) {
   const {
@@ -29,7 +29,9 @@ export function getLoginUrl(options) {
   authUrl.searchParams.set("scope", scopes.join(" "));
 
   if (returnTo) {
-    const state = Buffer.from(JSON.stringify({ returnTo })).toString("base64url");
+    const state = Buffer.from(JSON.stringify({ returnTo })).toString(
+      "base64url",
+    );
     authUrl.searchParams.set("state", state);
   }
 
@@ -37,12 +39,12 @@ export function getLoginUrl(options) {
 }
 
 /**
- * Genera la URL de logout
+ * Generate the logout URL
  *
  * @param {Object} options
- * @param {string} options.logoutEndpoint - URL de la API de logout local (ej: "/api/auth/logout")
- * @param {string} options.returnTo - URL a la que volver después del logout
- * @returns {string} URL de logout
+ * @param {string} options.logoutEndpoint - URL of the local logout API (e.g., "/api/auth/logout")
+ * @param {string} options.returnTo - URL to return to after logout
+ * @returns {string} Logout URL
  */
 export function getLogoutUrl(options = {}) {
   const { logoutEndpoint = "/api/auth/logout", returnTo } = options;
@@ -55,16 +57,21 @@ export function getLogoutUrl(options = {}) {
 }
 
 /**
- * Crea una configuración reutilizable para auth
+ * Create a reusable authentication configuration
  *
  * @param {Object} config
- * @param {string} config.issuer - URL del servidor Gate
- * @param {string} config.clientId - Client ID de la app
- * @param {string} config.redirectUri - URI de callback
- * @param {string[]} config.scopes - Scopes a solicitar
+ * @param {string} config.issuer - URL of the Gate server
+ * @param {string} config.clientId - Client ID of the app
+ * @param {string} config.redirectUri - Callback URI
+ * @param {string[]} config.scopes - Scopes to request
  */
 export function createAuthConfig(config) {
-  const { issuer, clientId, redirectUri, scopes = ["openid", "profile", "email"] } = config;
+  const {
+    issuer,
+    clientId,
+    redirectUri,
+    scopes = ["openid", "profile", "email"],
+  } = config;
 
   return {
     getLoginUrl: (returnTo) =>

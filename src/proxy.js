@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 import { verifyTokenWithJWKS } from "./lib/jwks.js";
 
 /**
- * Crea un proxy de autenticación para Next.js 16
+ * Create an authentication proxy for Next.js 16
  *
  * @param {Object} options
- * @param {string} options.issuer - URL del servidor Gate (ej: "https://gate.am25.app")
- * @param {string} options.cookieName - Nombre de la cookie de sesión (default: "am25_sess")
- * @param {string[]} options.protectedPaths - Rutas protegidas (default: ["/dashboard"])
- * @param {string[]} options.publicPaths - Rutas públicas dentro de protectedPaths (ej: ["/dashboard/public"])
- * @param {string} options.clientId - Client ID de la app en Gate
- * @param {string} options.redirectUri - URI de callback (ej: "https://myapp.am25.app/api/auth/callback")
+ * @param {string} options.issuer - URL of the Gate server (e.g., "https://gate.example.com")
+ * @param {string} options.cookieName - Name of the session cookie (default: "am25_sess")
+ * @param {string[]} options.protectedPaths - Protected routes (default: ["/dashboard"])
+ * @param {string[]} options.publicPaths - Public routes within protectedPaths (e.g., ["/dashboard/public"])
+ * @param {string} options.clientId - Client ID of the app in Gate
+ * @param {string} options.redirectUri - Callback URI (e.g., "https://myapp.example.com/api/auth/callback")
  */
 export function createGateProxy(options) {
   const {
@@ -30,19 +30,19 @@ export function createGateProxy(options) {
   return async function gateProxy(request) {
     const { pathname } = request.nextUrl;
 
-    // Verificar si es una ruta pública
+    // Verify if it's a public route
     const isPublic = publicPaths.some(
-      (path) => pathname === path || pathname.startsWith(path + "/")
+      (path) => pathname === path || pathname.startsWith(path + "/"),
     );
     if (isPublic) return null;
 
-    // Verificar si es una ruta protegida
+    // Verify if it's a protected route
     const isProtected = protectedPaths.some(
-      (path) => pathname === path || pathname.startsWith(path + "/")
+      (path) => pathname === path || pathname.startsWith(path + "/"),
     );
     if (!isProtected) return null;
 
-    // Obtener cookie de sesión
+    // Get session cookie
     const token = request.cookies.get(cookieName)?.value;
 
     if (!token) {
