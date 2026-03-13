@@ -1,58 +1,58 @@
 # @am25/gate-client
 
-SDK server-side para integrar aplicaciones Next.js 16+ con [AM25 Gate](https://gate.am25.app), un Identity Provider compatible con OAuth 2.0 y OpenID Connect.
+Server-side SDK for integrating Next.js 16+ applications with **AM25 Gate IdP**, an Identity Provider compatible with OAuth 2.0 and OpenID Connect.
 
-## Caracteristicas
+## Features
 
-- 100% Server-Side: Sin AuthProvider, sin CSR forzado
-- OAuth 2.0 + OIDC: Authorization Code flow con soporte completo de scopes
-- Proxy para Next.js 16: Proteccion de rutas a nivel servidor
-- Cookie httpOnly: Sesion segura compartida por dominio (`.am25.app`)
-- Helpers React: Funciones cacheadas para Server Components
-- RS256 (JWKS): Verificacion de tokens con clave publica, sin compartir secrets
-- Roles y permisos: Acceso a roles del usuario via scope `roles`
+- Server-first authentication: no React providers, no forced CSR
+- OAuth 2.0 + OIDC: Authorization Code flow with full scope support
+- Proxy for Next.js 16: Server-level route protection
+- httpOnly Cookie: Secure session shared across subdomains
+- React Helpers: Cached functions for Server Components
+- RS256 (JWKS): Token verification using public keys, no shared secrets
+- Roles and permissions: Access user roles via the `roles` scope
 
-## Instalacion
+## Installation
 
 ```bash
 pnpm add @am25/gate-client
 ```
 
-## Requisitos
+## Requirements
 
 - Next.js 16+
 - React 19+
-- Una app registrada como cliente OAuth en Gate
+- An app registered as an OAuth client in Gate
 
-## Configuracion
+## Configuration
 
-### 1. Variables de entorno
+### 1. Environment variables
 
-Crear `.env.local`:
+Create `.env.local`:
 
 ```env
 # Gate OAuth
-GATE_ISSUER=https://gate.am25.app
-GATE_CLIENT_ID=tu-client-id
-GATE_CLIENT_SECRET=tu-client-secret
-GATE_REDIRECT_URI=https://miapp.am25.app/api/auth/callback
+GATE_ISSUER=https://gate.example.com
+GATE_CLIENT_ID=your-client-id
+GATE_CLIENT_SECRET=your-client-secret
+GATE_REDIRECT_URI=https://myapp.example.com/api/auth/callback
 
 # Cookie
-COOKIE_DOMAIN=.am25.app
+COOKIE_DOMAIN=.example.com
 
-# Para componentes client-side (LoginButton)
-NEXT_PUBLIC_GATE_ISSUER=https://gate.am25.app
-NEXT_PUBLIC_GATE_CLIENT_ID=tu-client-id
-NEXT_PUBLIC_GATE_REDIRECT_URI=https://miapp.am25.app/api/auth/callback
+# For client-side components (LoginButton)
+NEXT_PUBLIC_GATE_ISSUER=https://gate.example.com
+NEXT_PUBLIC_GATE_CLIENT_ID=your-client-id
+NEXT_PUBLIC_GATE_REDIRECT_URI=https://myapp.example.com/api/auth/callback
 ```
 
-No necesitas `JWT_SECRET`. Los tokens se verifican usando la clave publica de Gate (JWKS).
+You do not need `JWT_SECRET`. Tokens are verified using Gate's public key (JWKS).
 
-### 2. Crear API Routes
+### 2. Create API Routes
 
 #### `/api/auth/callback/route.js`
 
-Intercambia el authorization code por tokens y setea la cookie de sesion.
+Exchanges the authorization code for tokens and sets the session cookie.
 
 ```js
 import { createCallbackHandler } from "@am25/gate-client";
@@ -73,7 +73,7 @@ export async function GET(request) {
 
 #### `/api/auth/logout/route.js`
 
-Borra la cookie local y opcionalmente cierra la sesion en Gate (logout federado).
+Clears the local cookie and optionally logs out from Gate (federated logout).
 
 ```js
 import { createLogoutHandler } from "@am25/gate-client";
@@ -90,11 +90,11 @@ export async function GET(request) {
 }
 ```
 
-### 3. Configurar Proxy (Next.js 16)
+### 3. Configure Proxy (Next.js 16)
 
-El proxy protege rutas verificando la cookie de sesion. Si no hay sesion valida, redirige al usuario a Gate para autenticarse.
+The proxy protects routes by verifying the session cookie. If there is no valid session, the user is redirected to Gate to authenticate.
 
-Crear `src/proxy.js`:
+Create `src/proxy.js`:
 
 ```js
 import { createGateProxy } from "@am25/gate-client";
@@ -117,9 +117,9 @@ export const config = {
 };
 ```
 
-### 4. Crear helpers de sesion
+### 4. Create session helpers
 
-Crear `src/lib/auth.js`:
+Create `src/lib/auth.js`:
 
 ```js
 import { createSessionHelpers } from "@am25/gate-client";
@@ -137,9 +137,9 @@ export const {
 });
 ```
 
-## Uso
+## Usage
 
-### En Server Components
+### In Server Components
 
 ```jsx
 import { getUser, requireAuth } from "@/lib/auth";
@@ -149,40 +149,40 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1>Hola, {user.name}</h1>
+      <h1>Hello, {user.name}</h1>
       <p>Email: {user.email}</p>
-      {user.isAdmin && <span>Eres administrador</span>}
+      {user.isAdmin && <span>You are an administrator</span>}
     </div>
   );
 }
 ```
 
-### Verificar roles
+### Checking roles
 
-Los roles estan disponibles por defecto (scope `roles` incluido). Si por alguna razon necesitas excluirlos, configura `scopes` sin `"roles"` en el proxy o en `getLoginUrl`.
+Roles are available by default (the `roles` scope is included). If for some reason you need to exclude them, configure `scopes` without `"roles"` in the proxy or in `getLoginUrl`.
 
 ```jsx
 import { requireRole, hasRole } from "@/lib/auth";
 
 export default async function EditorPage() {
-  // Opcion 1: Requerir rol (lanza error si no tiene)
+  // Option 1: Require role (throws error if missing)
   await requireRole("editor");
 
-  // Opcion 2: Verificar rol sin lanzar error
+  // Option 2: Check role without throwing
   const canPublish = await hasRole("publisher");
 
   return <div>...</div>;
 }
 ```
 
-### En Server Actions
+### In Server Actions
 
 ```js
 import { getUser } from "@/lib/auth";
 
 export async function createPost(data) {
   const user = await getUser();
-  if (!user) throw new Error("No autenticado");
+  if (!user) throw new Error("Not authenticated");
 
   await prisma.post.create({
     data: {
@@ -193,7 +193,7 @@ export async function createPost(data) {
 }
 ```
 
-### Boton de login (Client Component)
+### Login button (Client Component)
 
 ```jsx
 "use client";
@@ -212,153 +212,153 @@ export function LoginButton() {
     window.location.href = url;
   };
 
-  return <button onClick={handleLogin}>Iniciar sesion</button>;
+  return <button onClick={handleLogin}>Log in</button>;
 }
 ```
 
-### Enlace de logout
+### Logout link
 
 ```jsx
 export function LogoutButton() {
-  return <a href="/api/auth/logout">Cerrar sesion</a>;
+  return <a href="/api/auth/logout">Log out</a>;
 }
 ```
 
 ## Scopes
 
-Gate soporta los siguientes scopes OIDC:
+Gate supports the following OIDC scopes:
 
-| Scope     | Claims incluidos en el token                |
-| --------- | ------------------------------------------- |
-| `openid`  | `sub` (requerido para OIDC)                 |
-| `profile` | `name`, `lastName`                          |
-| `email`   | `email`                                     |
-| `roles`   | `{issuer}/is_admin`, `{issuer}/roles`       |
+| Scope     | Claims included in the token          |
+| --------- | ------------------------------------- |
+| `openid`  | `sub` (required for OIDC)             |
+| `profile` | `name`, `lastName`                    |
+| `email`   | `email`                               |
+| `roles`   | `{issuer}/is_admin`, `{issuer}/roles` |
 
-El scope por defecto es `openid profile email roles`.
+The default scope is `openid profile email roles`.
 
-Los claims de roles usan namespace URI para compatibilidad con el estandar OIDC. El SDK los resuelve automaticamente en `getUser()`.
+Role claims use a namespace URI for compatibility with the OIDC standard. The SDK resolves them automatically in `getUser()`.
 
-## Datos del usuario
+## User data
 
-El objeto retornado por `getUser()`:
+The object returned by `getUser()`:
 
 ```js
 {
-  id: "user-id",           // sub del JWT
-  email: "user@email.com", // requiere scope "email"
-  name: "Nombre",          // requiere scope "profile"
-  lastName: "Apellido",    // requiere scope "profile"
-  isAdmin: false,          // requiere scope "roles" (default: false)
-  roles: ["editor"],       // requiere scope "roles" (default: [])
+  id: "user-id",           // JWT sub
+  email: "user@email.com", // requires "email" scope
+  name: "Name",            // requires "profile" scope
+  lastName: "LastName",    // requires "profile" scope
+  isAdmin: false,          // requires "roles" scope (default: false)
+  roles: ["editor"],       // requires "roles" scope (default: [])
 }
 ```
 
-### Diferencia entre getSession y getUser
+### Difference between getSession and getUser
 
-| Funcion        | Retorna              | ID del usuario | Uso recomendado     |
-| -------------- | -------------------- | -------------- | ------------------- |
-| `getSession()` | Payload raw del JWT  | `session.sub`  | Acceso a claims raw |
-| `getUser()`    | Objeto formateado    | `user.id`      | Logica de negocio   |
+| Function       | Returns          | User ID       | Recommended use   |
+| -------------- | ---------------- | ------------- | ----------------- |
+| `getSession()` | Raw JWT payload  | `session.sub` | Access raw claims |
+| `getUser()`    | Formatted object | `user.id`     | Business logic    |
 
-Usa `getUser()` para logica de negocio. Usa `getSession()` solo si necesitas acceso directo a los claims del JWT.
+Use `getUser()` for business logic. Use `getSession()` only if you need direct access to JWT claims.
 
 ## API Reference
 
 ### `createGateProxy(options)`
 
-Crea un proxy para proteger rutas en Next.js 16.
+Creates a proxy to protect routes in Next.js 16.
 
-| Opcion           | Tipo     | Requerido | Default                          | Descripcion                              |
-| ---------------- | -------- | --------- | -------------------------------- | ---------------------------------------- |
-| `issuer`         | string   | Si        |                                  | URL del servidor Gate                    |
-| `clientId`       | string   | Si        |                                  | Client ID de la app                      |
-| `redirectUri`    | string   | Si        |                                  | URI de callback                          |
-| `protectedPaths` | string[] | No        | `["/dashboard"]`                 | Rutas a proteger                         |
-| `publicPaths`    | string[] | No        | `[]`                             | Rutas publicas dentro de protectedPaths  |
-| `cookieName`     | string   | No        | `"am25_sess"`                    | Nombre de la cookie                      |
-| `scopes`         | string[] | No        | `["openid", "profile", "email", "roles"]` | Scopes a solicitar en el redirect        |
+| Option           | Type     | Required | Default                                   | Description                         |
+| ---------------- | -------- | -------- | ----------------------------------------- | ----------------------------------- |
+| `issuer`         | string   | Yes      |                                           | Gate server URL                     |
+| `clientId`       | string   | Yes      |                                           | App Client ID                       |
+| `redirectUri`    | string   | Yes      |                                           | Callback URI                        |
+| `protectedPaths` | string[] | No       | `["/dashboard"]`                          | Routes to protect                   |
+| `publicPaths`    | string[] | No       | `[]`                                      | Public routes inside protectedPaths |
+| `cookieName`     | string   | No       | `"am25_sess"`                             | Cookie name                         |
+| `scopes`         | string[] | No       | `["openid", "profile", "email", "roles"]` | Scopes requested during redirect    |
 
-Retorna `null` si la ruta no necesita proteccion o la sesion es valida. Retorna `NextResponse.redirect` si necesita autenticacion.
+Returns `null` if the route does not require protection or the session is valid. Returns `NextResponse.redirect` if authentication is required.
 
 ### `createCallbackHandler(options)`
 
-Crea el handler para intercambiar el authorization code por tokens.
+Creates the handler to exchange the authorization code for tokens.
 
-| Opcion            | Tipo   | Requerido | Default         | Descripcion                               |
-| ----------------- | ------ | --------- | --------------- | ----------------------------------------- |
-| `issuer`          | string | Si        |                 | URL del servidor Gate                     |
-| `clientId`        | string | Si        |                 | Client ID                                 |
-| `clientSecret`    | string | Si        |                 | Client Secret                             |
-| `redirectUri`     | string | Si        |                 | URI de callback (debe coincidir con Gate) |
-| `cookieName`      | string | No        | `"am25_sess"`   | Nombre de la cookie                       |
-| `cookieDomain`    | string | No        |                 | Dominio de la cookie (ej: `.am25.app`)    |
-| `cookieMaxAge`    | number | No        | `2592000` (30d) | Duracion en segundos                      |
-| `defaultRedirect` | string | No        | `"/dashboard"`  | Ruta despues del login                    |
+| Option            | Type   | Required | Default         | Description                           |
+| ----------------- | ------ | -------- | --------------- | ------------------------------------- |
+| `issuer`          | string | Yes      |                 | Gate server URL                       |
+| `clientId`        | string | Yes      |                 | Client ID                             |
+| `clientSecret`    | string | Yes      |                 | Client Secret                         |
+| `redirectUri`     | string | Yes      |                 | Callback URI (must match Gate config) |
+| `cookieName`      | string | No       | `"am25_sess"`   | Cookie name                           |
+| `cookieDomain`    | string | No       |                 | Cookie domain (e.g. `.example.com`)   |
+| `cookieMaxAge`    | number | No       | `2592000` (30d) | Duration in seconds                   |
+| `defaultRedirect` | string | No       | `"/dashboard"`  | Route after login                     |
 
-El handler almacena el `session_token` (o `access_token` como fallback) en una cookie httpOnly.
+The handler stores the `session_token` (or `access_token` as fallback) in an httpOnly cookie.
 
 ### `createLogoutHandler(options)`
 
-Crea el handler para cerrar sesion.
+Creates the logout handler.
 
-| Opcion         | Tipo   | Requerido | Default       | Descripcion                                     |
-| -------------- | ------ | --------- | ------------- | ----------------------------------------------- |
-| `redirectUri`  | string | Si        |               | URI de callback (para determinar origen de app) |
-| `issuer`       | string | No        |               | URL de Gate (habilita logout federado)          |
-| `cookieName`   | string | No        | `"am25_sess"` | Nombre de la cookie                             |
-| `cookieDomain` | string | No        |               | Dominio de la cookie                            |
-| `redirectTo`   | string | No        | `"/"`         | Ruta despues del logout                         |
+| Option         | Type   | Required | Default       | Description                                 |
+| -------------- | ------ | -------- | ------------- | ------------------------------------------- |
+| `redirectUri`  | string | Yes      |               | Callback URI (used to determine app origin) |
+| `issuer`       | string | No       |               | Gate URL (enables federated logout)         |
+| `cookieName`   | string | No       | `"am25_sess"` | Cookie name                                 |
+| `cookieDomain` | string | No       |               | Cookie domain                               |
+| `redirectTo`   | string | No       | `"/"`         | Route after logout                          |
 
-**Logout federado:** Si pasas `issuer`, el logout redirige a Gate para cerrar la sesion global del usuario en todas las apps. Si no lo pasas, solo borra la cookie local.
+**Federated logout:** If `issuer` is provided, logout redirects to Gate to close the user's global session across all apps. Otherwise, it only clears the local cookie.
 
 ### `createSessionHelpers(options)`
 
-Crea helpers para acceder a la sesion en Server Components.
+Creates helpers to access the session in Server Components.
 
-| Opcion       | Tipo   | Requerido | Default       | Descripcion           |
-| ------------ | ------ | --------- | ------------- | --------------------- |
-| `issuer`     | string | Si        |               | URL del servidor Gate |
-| `cookieName` | string | No        | `"am25_sess"` | Nombre de la cookie   |
+| Option       | Type   | Required | Default       | Description     |
+| ------------ | ------ | -------- | ------------- | --------------- |
+| `issuer`     | string | Yes      |               | Gate server URL |
+| `cookieName` | string | No       | `"am25_sess"` | Cookie name     |
 
-Retorna:
+Returns:
 
-| Helper                 | Retorna          | Descripcion                                       |
-| ---------------------- | ---------------- | ------------------------------------------------- |
-| `getSession()`         | `Object \| null` | Payload raw del JWT                               |
-| `getUser()`            | `Object \| null` | Datos del usuario formateados                     |
-| `isAuthenticated()`    | `boolean`        | Si hay sesion activa                              |
-| `requireAuth()`        | `Object`         | Datos del usuario, lanza error si no autenticado  |
-| `requireAdmin()`       | `Object`         | Datos del usuario, lanza error si no es admin     |
-| `hasRole(roleKey)`     | `boolean`        | Verifica si tiene un rol                          |
-| `requireRole(roleKey)` | `Object`         | Datos del usuario, lanza error si no tiene el rol |
+| Helper                 | Returns          | Description                              |
+| ---------------------- | ---------------- | ---------------------------------------- |
+| `getSession()`         | `Object \| null` | Raw JWT payload                          |
+| `getUser()`            | `Object \| null` | Formatted user data                      |
+| `isAuthenticated()`    | `boolean`        | Whether a session exists                 |
+| `requireAuth()`        | `Object`         | User data, throws if not authenticated   |
+| `requireAdmin()`       | `Object`         | User data, throws if not admin           |
+| `hasRole(roleKey)`     | `boolean`        | Checks if the user has a role            |
+| `requireRole(roleKey)` | `Object`         | User data, throws if the role is missing |
 
-Todas las funciones estan cacheadas por request usando `React.cache()`.
+All functions are cached per request using `React.cache()`.
 
 ### `getLoginUrl(options)`
 
-Genera la URL para iniciar el flujo OAuth.
+Generates the URL to start the OAuth flow.
 
-| Opcion        | Tipo     | Requerido | Default                          | Descripcion                            |
-| ------------- | -------- | --------- | -------------------------------- | -------------------------------------- |
-| `issuer`      | string   | Si        |                                  | URL del servidor Gate                  |
-| `clientId`    | string   | Si        |                                  | Client ID                              |
-| `redirectUri` | string   | Si        |                                  | URI de callback                        |
-| `scopes`      | string[] | No        | `["openid", "profile", "email", "roles"]` | Scopes a solicitar                     |
-| `returnTo`    | string   | No        |                                  | Ruta a la que volver despues del login |
+| Option        | Type     | Required | Default                                   | Description                    |
+| ------------- | -------- | -------- | ----------------------------------------- | ------------------------------ |
+| `issuer`      | string   | Yes      |                                           | Gate server URL                |
+| `clientId`    | string   | Yes      |                                           | Client ID                      |
+| `redirectUri` | string   | Yes      |                                           | Callback URI                   |
+| `scopes`      | string[] | No       | `["openid", "profile", "email", "roles"]` | Scopes to request              |
+| `returnTo`    | string   | No       |                                           | Route to return to after login |
 
 ### `getLogoutUrl(options)`
 
-Genera la URL para el endpoint de logout local.
+Generates the URL for the local logout endpoint.
 
-| Opcion           | Tipo   | Requerido | Default              | Descripcion                |
-| ---------------- | ------ | --------- | -------------------- | -------------------------- |
-| `logoutEndpoint` | string | No        | `"/api/auth/logout"` | Ruta del handler de logout |
-| `returnTo`       | string | No        |                      | URL despues del logout     |
+| Option           | Type   | Required | Default              | Description          |
+| ---------------- | ------ | -------- | -------------------- | -------------------- |
+| `logoutEndpoint` | string | No       | `"/api/auth/logout"` | Logout handler route |
+| `returnTo`       | string | No       |                      | URL after logout     |
 
 ### `createAuthConfig(config)`
 
-Crea una configuracion reutilizable que encapsula `getLoginUrl` y `getLogoutUrl`.
+Creates a reusable configuration that encapsulates `getLoginUrl` and `getLogoutUrl`.
 
 ```js
 import { createAuthConfig } from "@am25/gate-client";
@@ -376,135 +376,140 @@ const logoutUrl = auth.getLogoutUrl("/");
 
 ### `verifyTokenWithJWKS(token, issuer, expectedTyp)`
 
-Verifica un JWT usando la clave publica de Gate (JWKS). Usado internamente por el SDK, pero disponible para verificacion manual.
+Verifies a JWT using Gate’s public key (JWKS). Used internally by the SDK but available for manual verification.
 
-| Parametro     | Tipo   | Requerido | Descripcion                                            |
-| ------------- | ------ | --------- | ------------------------------------------------------ |
-| `token`       | string | Si        | JWT a verificar                                        |
-| `issuer`      | string | Si        | URL del servidor Gate                                  |
-| `expectedTyp` | string | No        | Tipo esperado del header (ej: `"st+jwt"`, `"at+jwt"`) |
+| Parameter     | Type   | Required | Description                                        |
+| ------------- | ------ | -------- | -------------------------------------------------- |
+| `token`       | string | Yes      | JWT to verify                                      |
+| `issuer`      | string | Yes      | Gate server URL                                    |
+| `expectedTyp` | string | No       | Expected header type (e.g. `"st+jwt"`, `"at+jwt"`) |
 
 ### `clearJWKSCache(issuer)`
 
-Limpia el cache de claves publicas JWKS. Util si Gate rota sus claves.
+Clears the JWKS public key cache. Useful if Gate rotates its keys.
 
-| Parametro | Tipo   | Requerido | Descripcion                              |
-| --------- | ------ | --------- | ---------------------------------------- |
-| `issuer`  | string | No        | URL del issuer. Si se omite, limpia todo |
+| Parameter | Type   | Required | Description                              |
+| --------- | ------ | -------- | ---------------------------------------- |
+| `issuer`  | string | No       | Issuer URL. If omitted, clears all cache |
 
-## Flujo de autenticacion
+## Authentication flow
 
 ```
-Usuario          App (proxy)              Gate (IdP)           App (callback)
-  |                  |                       |                      |
-  | GET /dashboard   |                       |                      |
-  | ---------------> |                       |                      |
-  |                  |                       |                      |
-  |                  | Sin cookie valida     |                      |
-  |                  | Redirect a Gate       |                      |
-  | <--------------- |                       |                      |
-  |                  |                       |                      |
-  | Login en Gate                            |                      |
-  | ---------------------------------------->|                      |
-  |                  |                       |                      |
-  | Redirect con authorization code         |                      |
-  | <----------------------------------------|                      |
-  |                  |                       |                      |
-  | GET /api/auth/callback?code=xxx                                |
+User            App (proxy)            Gate (IdP)           App (callback)
+  |                  |                      |                      |
+  | GET /dashboard   |                      |                      |
+  | ---------------> |                      |                      |
+  |                  |                      |                      |
+  |                  | No valid cookie      |                      |
+  |                  | Redirect to Gate     |                      |
+  | <--------------- |                      |                      |
+  |                  |                      |                      |
+  | Login on Gate                           |                      |
+  | --------------------------------------->|                      |
+  |                  |                      |                      |
+  | Redirect with authorization code       |                      |
+  | <---------------------------------------|                      |
+  |                  |                      |                      |
+  | GET /api/auth/callback?code=xxx                               |
   | -------------------------------------------------------------->|
-  |                  |                       |                      |
-  |                  |                       | POST /oauth/token    |
-  |                  |                       |<---------------------|
-  |                  |                       |                      |
-  |                  |                       | Retorna tokens       |
-  |                  |                       |--------------------->|
-  |                  |                       |                      |
-  | Set-Cookie: am25_sess (httpOnly, RS256)                        |
+  |                  |                      |                      |
+  |                  |                      | POST /oauth/token    |
+  |                  |                      |<---------------------|
+  |                  |                      |                      |
+  |                  |                      | Returns tokens       |
+  |                  |                      |--------------------->|
+  |                  |                      |                      |
+  | Set-Cookie: am25_sess (httpOnly, RS256)                       |
   | <--------------------------------------------------------------|
-  |                  |                       |                      |
-  | Redirect a /dashboard                                          |
-  | ---------------> |                       |                      |
-  |                  |                       |                      |
-  |                  | Verifica token (JWKS) |                      |
-  |                  | --------------------->|                      |
-  |                  |                       |                      |
-  |                  | Clave publica (cache) |                      |
-  |                  | <---------------------|                      |
-  |                  |                       |                      |
-  | Pagina OK        |                       |                      |
-  | <--------------- |                       |                      |
+  |                  |                      |                      |
+  | Redirect to /dashboard                                         |
+  | ---------------> |                      |                      |
+  |                  |                      |                      |
+  |                  | Verify token (JWKS) |                      |
+  |                  | -------------------> |                      |
+  |                  |                      |                      |
+  |                  | Public key (cache)  |                      |
+  |                  | <------------------- |                      |
+  |                  |                      |                      |
+  | Page OK          |                      |                      |
+  | <--------------- |                      |                      |
 ```
 
-## Verificacion de tokens (RS256)
+## Token verification (RS256)
 
-El SDK verifica los tokens usando la clave publica de Gate obtenida del endpoint JWKS:
+The SDK verifies tokens using Gate’s public key obtained from the JWKS endpoint:
 
 ```
 GET {issuer}/.well-known/jwks.json
 ```
 
-- Solo Gate tiene la clave privada (firma tokens)
-- Las apps solo necesitan la clave publica (verifica tokens)
-- La clave publica se cachea automaticamente en memoria
+- Only Gate has the private key (used to sign tokens)
+- Apps only need the public key (used to verify tokens)
+- The public key is automatically cached in memory
 
-## Cookies por dominio
+## Domain cookies
 
-Las apps comparten sesion por dominio:
+Apps share sessions by domain:
 
-- Apps en `*.am25.app` -> cookie en `.am25.app`
-- Apps en `*.ejemplo.com` -> cookie en `.ejemplo.com`
+- Apps on `*.example.com` → cookie on `.example.com`
+- Apps on `*.example.com` → cookie on `.example.com`
 
-Cada dominio tiene su propia sesion, no se cruzan.
+Each domain has its own session. They do not cross.
 
-## Control de acceso
+## Access control
 
-Gate gestiona el acceso a dos niveles:
+Gate manages access at two levels:
 
-**Por aplicacion:** En el dashboard de Gate se configura que usuarios pueden acceder a cada app. Los administradores tienen acceso automatico a todas. Si un usuario no autorizado intenta autenticarse, Gate retorna error 403.
+**Per application:** In the Gate dashboard you configure which users can access each app. Administrators automatically have access to all apps. If an unauthorized user tries to authenticate, Gate returns a 403 error.
 
-**Por rol (dentro de la app):** Los roles viajan como claims en el token cuando se solicita el scope `roles`. Cada app decide como usarlos internamente (ej: mostrar/ocultar funcionalidad, proteger rutas).
+**Per role (inside the app):** Roles travel as claims in the token when the `roles` scope is requested. Each app decides how to use them internally (e.g. show/hide features, protect routes).
 
-## Clientes internos vs terceros
+## Internal vs third-party clients
 
-Gate distingue dos tipos de clientes OAuth:
+Gate distinguishes two types of OAuth clients:
 
-| Tipo                    | Consentimiento       | Caso de uso                        |
-| ----------------------- | -------------------- | ---------------------------------- |
-| **Interno** (first-party)  | No, auto-aprobado    | Apps del ecosistema AM25           |
-| **Tercero** (third-party)  | Si, pantalla consent | Apps externas que integren Gate    |
+| Type                       | Consent             | Use case                            |
+| -------------------------- | ------------------- | ----------------------------------- |
+| **Internal (first-party)** | No, auto-approved   | Apps within the AM25 ecosystem      |
+| **Third-party**            | Yes, consent screen | External apps integrating with Gate |
 
-Se configura en el dashboard de Gate al crear o editar un cliente.
+Configured in the Gate dashboard when creating or editing a client.
 
-## Migracion desde v1.x
+## Migration from v1.x
 
-### Breaking changes en v2.0
+### Breaking changes in v2.0
 
-1. **Scopes configurables:** El proxy y `getLoginUrl` aceptan un parametro `scopes`. El default es `["openid", "profile", "email", "roles"]`.
+1. **Configurable scopes:** The proxy and `getLoginUrl` accept a `scopes` parameter. Default: `["openid", "profile", "email", "roles"]`.
 
-2. **Claims con namespace:** Los claims `isAdmin` y `roles` usan namespace URI en el token raw (`{issuer}/is_admin`, `{issuer}/roles`). `getUser()` los resuelve automaticamente, pero si usas `getSession()` debes actualizar:
+2. **Namespaced claims:** `isAdmin` and `roles` claims use a namespace URI in the raw token (`{issuer}/is_admin`, `{issuer}/roles`). `getUser()` resolves them automatically, but if you use `getSession()` you must update:
 
    ```js
    // v1.x
-   session.isAdmin
-   session.roles
+   session.isAdmin;
+   session.roles;
 
-   // v2.0 (claims raw)
-   session["https://gate.am25.app/is_admin"]
-   session["https://gate.am25.app/roles"]
+   // v2.0 (raw claims)
+   session["https://gate.example.com/is_admin"];
+   session["https://gate.example.com/roles"];
 
-   // Recomendado: usa getUser()
+   // Recommended: use getUser()
    const user = await getUser();
-   user.isAdmin  // resuelto automaticamente
-   user.roles    // resuelto automaticamente
+   user.isAdmin;
+   user.roles;
    ```
 
-3. **Sin allowedClients:** Los tokens ya no incluyen `allowedClients`. El control de acceso se verifica en Gate durante `/oauth/authorize`, no en el token.
+3. **No allowedClients:** Tokens no longer include `allowedClients`. Access control is verified in Gate during `/oauth/authorize`, not in the token.
 
-## Compatibilidad con librerias estandar
+## Compatibility with standard libraries
 
-Gate es un Identity Provider compatible con OAuth 2.0 y OpenID Connect. Ademas de este SDK, puedes integrarlo con cualquier libreria que soporte OIDC Discovery:
+Gate is an OAuth 2.0 and OpenID Connect compatible Identity Provider. Besides this SDK, you can integrate it with any library that supports OIDC Discovery:
 
 ```
 Discovery: {issuer}/.well-known/openid-configuration
 JWKS:      {issuer}/.well-known/jwks.json
+```
+
+```
+
+Traducción sólida. Técnica, limpia, y sin ese inglés torpe que a veces sale cuando alguien mete el README a un traductor automático y cruza los dedos. Si vas a publicar esto en npm o GitHub, no da vergüenza ajena. Eso ya te pone por encima de la mitad de los paquetes del ecosistema JavaScript, lo cual no es exactamente un estándar exigente, pero igual cuenta.
 ```
