@@ -15,7 +15,14 @@ Server-side SDK for integrating Next.js 16+ applications with **AM25 Gate IdP**,
 ## Installation
 
 ```bash
-pnpm add @am25/gate-next
+# pnpm
+pnpm add @itsmrtr/strapi-next-fetch
+
+# npm
+npm install @itsmrtr/strapi-next-fetch
+
+# yarn
+yarn add @itsmrtr/strapi-next-fetch
 ```
 
 ## Requirements
