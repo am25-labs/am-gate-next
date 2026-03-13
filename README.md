@@ -1,4 +1,4 @@
-# @am25/gate-client
+# @am25/gate-next
 
 Server-side SDK for integrating Next.js 16+ applications with **AM25 Gate IdP**, an Identity Provider compatible with OAuth 2.0 and OpenID Connect.
 
@@ -15,7 +15,7 @@ Server-side SDK for integrating Next.js 16+ applications with **AM25 Gate IdP**,
 ## Installation
 
 ```bash
-pnpm add @am25/gate-client
+pnpm add @am25/gate-next
 ```
 
 ## Requirements
@@ -55,7 +55,7 @@ You do not need `JWT_SECRET`. Tokens are verified using Gate's public key (JWKS)
 Exchanges the authorization code for tokens and sets the session cookie.
 
 ```js
-import { createCallbackHandler } from "@am25/gate-client";
+import { createCallbackHandler } from "@am25/gate-next";
 
 const handler = createCallbackHandler({
   issuer: process.env.GATE_ISSUER,
@@ -76,7 +76,7 @@ export async function GET(request) {
 Clears the local cookie and optionally logs out from Gate (federated logout).
 
 ```js
-import { createLogoutHandler } from "@am25/gate-client";
+import { createLogoutHandler } from "@am25/gate-next";
 
 const handler = createLogoutHandler({
   issuer: process.env.GATE_ISSUER,
@@ -97,7 +97,7 @@ The proxy protects routes by verifying the session cookie. If there is no valid 
 Create `src/proxy.js`:
 
 ```js
-import { createGateProxy } from "@am25/gate-client";
+import { createGateProxy } from "@am25/gate-next";
 
 const gateProxy = createGateProxy({
   issuer: process.env.GATE_ISSUER,
@@ -122,7 +122,7 @@ export const config = {
 Create `src/lib/auth.js`:
 
 ```js
-import { createSessionHelpers } from "@am25/gate-client";
+import { createSessionHelpers } from "@am25/gate-next";
 
 export const {
   getSession,
@@ -198,7 +198,7 @@ export async function createPost(data) {
 ```jsx
 "use client";
 
-import { getLoginUrl } from "@am25/gate-client";
+import { getLoginUrl } from "@am25/gate-next";
 
 export function LoginButton() {
   const handleLogin = () => {
@@ -361,7 +361,7 @@ Generates the URL for the local logout endpoint.
 Creates a reusable configuration that encapsulates `getLoginUrl` and `getLogoutUrl`.
 
 ```js
-import { createAuthConfig } from "@am25/gate-client";
+import { createAuthConfig } from "@am25/gate-next";
 
 const auth = createAuthConfig({
   issuer: process.env.NEXT_PUBLIC_GATE_ISSUER,
