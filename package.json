@@ -1,15 +1,30 @@
 {
-  "name": "@am25/gate-client",
-  "version": "2.0.1",
-  "description": "SDK de autenticación OAuth2+OIDC de AM25",
+  "name": "@am25/gate-next",
+  "version": "1.0.0",
+  "description": "AM25 Gate (OAuth2+OIDC Authentication) SDK for Next.js",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
   },
   "files": [
     "src"
   ],
+  "author": {
+    "name": "Alejandro Mártir",
+    "url": "https://alemartir.com"
+  },
+  "homepage": "https://github.com/am25-labs/am-gate-next#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/am25-labs/am-gate-next.git"
+  },
+  "bugs": {
+    "url": "https://github.com/am25-labs/am-gate-next/issues"
+  },
   "dependencies": {
     "jose": "^5.0.0"
   },
@@ -17,15 +32,19 @@
     "next": ">=16.0.0",
     "react": ">=19.0.0"
   },
-  "publishConfig": {
-    "registry": "https://git.am25.app/api/packages/AM25/npm/"
+  "engines": {
+    "node": ">=18"
   },
   "keywords": [
     "oauth2",
+    "oidc",
+    "openid-connect",
     "authentication",
     "nextjs",
+    "sso",
+    "identity-provider",
     "am25",
     "gate"
   ],
-  "author": "Alejandro Mártir"
+  "license": "MIT"
 }
