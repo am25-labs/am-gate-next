@@ -51,10 +51,24 @@ export function createGateProxy(options) {
 
     try {
       await verifyTokenWithJWKS(token, issuer, "st+jwt");
-      return null;
     } catch {
       return redirectToLogin(request, issuer, clientId, redirectUri, scopes);
     }
+
+    try {
+      const sessionRes = await fetch(
+        `${issuer.replace(/\/$/, "")}/api/auth/session?client_id=${encodeURIComponent(clientId)}`,
+        { headers: { Cookie: `${cookieName}=${token}` }, cache: "no-store" },
+      );
+
+      if (sessionRes.status === 403) {
+        return NextResponse.redirect(new URL("/unauthorized", issuer));
+      }
+    } catch {
+      // Gate unreachable — fail open, JWT is already verified
+    }
+
+    return null;
   };
 }
 
