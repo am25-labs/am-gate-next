@@ -25,7 +25,7 @@
   "homepage": "https://github.com/am25-labs/am-gate-next#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/am25-labs/am-gate-next.git"
+    "url": "git+https://github.com/am25-labs/am-gate-next.git"
   },
   "bugs": {
     "url": "https://github.com/am25-labs/am-gate-next/issues"
