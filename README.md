@@ -4,6 +4,7 @@ Server-side SDK for integrating Next.js 16+ applications with **AM25 Gate IdP**,
 
 ## Features
 
+- **TypeScript-first**: Full type definitions with exported interfaces
 - Server-first authentication: no React providers, no forced CSR
 - OAuth 2.0 + OIDC: Authorization Code flow with full scope support
 - Proxy for Next.js 16: Server-level route protection
@@ -57,9 +58,30 @@ You do not need `JWT_SECRET`. Tokens are verified using Gate's public key (JWKS)
 
 ### 2. Create API Routes
 
-#### `/api/auth/callback/route.js`
+#### `/api/auth/callback/route.ts`
 
 Exchanges the authorization code for tokens and sets the session cookie.
+
+```ts
+import { createCallbackHandler } from "@am25/gate-next";
+import type { NextRequest } from "next/server";
+
+const handler = createCallbackHandler({
+  issuer: process.env.GATE_ISSUER!,
+  clientId: process.env.GATE_CLIENT_ID!,
+  clientSecret: process.env.GATE_CLIENT_SECRET!,
+  redirectUri: process.env.GATE_REDIRECT_URI!,
+  cookieDomain: process.env.COOKIE_DOMAIN,
+  defaultRedirect: "/dashboard",
+});
+
+export async function GET(request: NextRequest) {
+  return handler(request);
+}
+```
+
+<details>
+<summary>JavaScript version</summary>
 
 ```js
 import { createCallbackHandler } from "@am25/gate-next";
@@ -78,9 +100,30 @@ export async function GET(request) {
 }
 ```
 
-#### `/api/auth/logout/route.js`
+</details>
+
+#### `/api/auth/logout/route.ts`
 
 Clears the local cookie and optionally logs out from Gate (federated logout).
+
+```ts
+import { createLogoutHandler } from "@am25/gate-next";
+import type { NextRequest } from "next/server";
+
+const handler = createLogoutHandler({
+  issuer: process.env.GATE_ISSUER,
+  redirectUri: process.env.GATE_REDIRECT_URI!,
+  cookieDomain: process.env.COOKIE_DOMAIN,
+  redirectTo: "/",
+});
+
+export async function GET(request: NextRequest) {
+  return handler(request);
+}
+```
+
+<details>
+<summary>JavaScript version</summary>
 
 ```js
 import { createLogoutHandler } from "@am25/gate-next";
@@ -97,11 +140,37 @@ export async function GET(request) {
 }
 ```
 
+</details>
+
 ### 3. Configure Proxy (Next.js 16)
 
 The proxy protects routes by verifying the session cookie. If there is no valid session, the user is redirected to Gate to authenticate.
 
-Create `src/proxy.js`:
+Create `src/proxy.ts`:
+
+```ts
+import { createGateProxy } from "@am25/gate-next";
+import type { NextRequest } from "next/server";
+
+const gateProxy = createGateProxy({
+  issuer: process.env.GATE_ISSUER!,
+  clientId: process.env.GATE_CLIENT_ID!,
+  redirectUri: process.env.GATE_REDIRECT_URI!,
+  protectedPaths: ["/dashboard", "/settings"],
+  publicPaths: ["/dashboard/public"],
+});
+
+export async function proxy(request: NextRequest) {
+  return gateProxy(request);
+}
+
+export const config = {
+  matcher: ["/dashboard/:path*", "/settings/:path*"],
+};
+```
+
+<details>
+<summary>JavaScript version</summary>
 
 ```js
 import { createGateProxy } from "@am25/gate-next";
@@ -112,7 +181,6 @@ const gateProxy = createGateProxy({
   redirectUri: process.env.GATE_REDIRECT_URI,
   protectedPaths: ["/dashboard", "/settings"],
   publicPaths: ["/dashboard/public"],
-  // scopes: ["openid", "profile", "email", "roles"], // default
 });
 
 export async function proxy(request) {
@@ -124,9 +192,30 @@ export const config = {
 };
 ```
 
+</details>
+
 ### 4. Create session helpers
 
-Create `src/lib/auth.js`:
+Create `src/lib/auth.ts`:
+
+```ts
+import { createSessionHelpers } from "@am25/gate-next";
+
+export const {
+  getSession,
+  getUser,
+  isAuthenticated,
+  requireAuth,
+  requireAdmin,
+  hasRole,
+  requireRole,
+} = createSessionHelpers({
+  issuer: process.env.GATE_ISSUER!,
+});
+```
+
+<details>
+<summary>JavaScript version</summary>
 
 ```js
 import { createSessionHelpers } from "@am25/gate-next";
@@ -144,12 +233,14 @@ export const {
 });
 ```
 
+</details>
+
 ## Usage
 
 ### In Server Components
 
-```jsx
-import { getUser, requireAuth } from "@/lib/auth";
+```tsx
+import { requireAuth } from "@/lib/auth";
 
 export default async function DashboardPage() {
   const user = await requireAuth();
@@ -168,14 +259,12 @@ export default async function DashboardPage() {
 
 Roles are available by default (the `roles` scope is included). If for some reason you need to exclude them, configure `scopes` without `"roles"` in the proxy or in `getLoginUrl`.
 
-```jsx
+```tsx
 import { requireRole, hasRole } from "@/lib/auth";
 
 export default async function EditorPage() {
-  // Option 1: Require role (throws error if missing)
   await requireRole("editor");
 
-  // Option 2: Check role without throwing
   const canPublish = await hasRole("publisher");
 
   return <div>...</div>;
@@ -184,7 +273,35 @@ export default async function EditorPage() {
 
 ### In Server Actions
 
+```ts
+"use server";
+
+import { getUser } from "@/lib/auth";
+
+interface CreatePostData {
+  title: string;
+  content: string;
+}
+
+export async function createPost(data: CreatePostData) {
+  const user = await getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  await prisma.post.create({
+    data: {
+      ...data,
+      authorId: user.id,
+    },
+  });
+}
+```
+
+<details>
+<summary>JavaScript version</summary>
+
 ```js
+"use server";
+
 import { getUser } from "@/lib/auth";
 
 export async function createPost(data) {
@@ -200,7 +317,32 @@ export async function createPost(data) {
 }
 ```
 
+</details>
+
 ### Login button (Client Component)
+
+```tsx
+"use client";
+
+import { getLoginUrl } from "@am25/gate-next";
+
+export function LoginButton() {
+  const handleLogin = () => {
+    const url = getLoginUrl({
+      issuer: process.env.NEXT_PUBLIC_GATE_ISSUER!,
+      clientId: process.env.NEXT_PUBLIC_GATE_CLIENT_ID!,
+      redirectUri: process.env.NEXT_PUBLIC_GATE_REDIRECT_URI!,
+      returnTo: "/dashboard",
+    });
+    window.location.href = url;
+  };
+
+  return <button onClick={handleLogin}>Log in</button>;
+}
+```
+
+<details>
+<summary>JavaScript version</summary>
 
 ```jsx
 "use client";
@@ -214,7 +356,6 @@ export function LoginButton() {
       clientId: process.env.NEXT_PUBLIC_GATE_CLIENT_ID,
       redirectUri: process.env.NEXT_PUBLIC_GATE_REDIRECT_URI,
       returnTo: "/dashboard",
-      // scopes: ["openid", "profile", "email", "roles"], // default
     });
     window.location.href = url;
   };
@@ -222,6 +363,8 @@ export function LoginButton() {
   return <button onClick={handleLogin}>Log in</button>;
 }
 ```
+
+</details>
 
 ### Logout link
 
@@ -248,25 +391,25 @@ Role claims use a namespace URI for compatibility with the OIDC standard. The SD
 
 ## User data
 
-The object returned by `getUser()`:
+The object returned by `getUser()` implements the `GateUser` interface:
 
-```js
-{
-  id: "user-id",           // JWT sub
-  email: "user@email.com", // requires "email" scope
-  name: "Name",            // requires "profile" scope
-  lastName: "LastName",    // requires "profile" scope
-  isAdmin: false,          // requires "roles" scope (default: false)
-  roles: ["editor"],       // requires "roles" scope (default: [])
+```ts
+interface GateUser {
+  id: string;        // JWT sub
+  email: string;     // requires "email" scope
+  name: string;      // requires "profile" scope
+  lastName: string;  // requires "profile" scope
+  isAdmin: boolean;  // requires "roles" scope (default: false)
+  roles: string[];   // requires "roles" scope (default: [])
 }
 ```
 
 ### Difference between getSession and getUser
 
-| Function       | Returns          | User ID       | Recommended use   |
-| -------------- | ---------------- | ------------- | ----------------- |
-| `getSession()` | Raw JWT payload  | `session.sub` | Access raw claims |
-| `getUser()`    | Formatted object | `user.id`     | Business logic    |
+| Function       | Returns              | User ID       | Recommended use   |
+| -------------- | -------------------- | ------------- | ----------------- |
+| `getSession()` | `JWTPayload \| null` | `session.sub` | Access raw claims |
+| `getUser()`    | `GateUser \| null`   | `user.id`     | Business logic    |
 
 Use `getUser()` for business logic. Use `getSession()` only if you need direct access to JWT claims.
 
@@ -328,17 +471,17 @@ Creates helpers to access the session in Server Components.
 | `issuer`     | string | Yes      |               | Gate server URL |
 | `cookieName` | string | No       | `"am25_sess"` | Cookie name     |
 
-Returns:
+Returns a `SessionHelpers` object:
 
-| Helper                 | Returns          | Description                              |
-| ---------------------- | ---------------- | ---------------------------------------- |
-| `getSession()`         | `Object \| null` | Raw JWT payload                          |
-| `getUser()`            | `Object \| null` | Formatted user data                      |
-| `isAuthenticated()`    | `boolean`        | Whether a session exists                 |
-| `requireAuth()`        | `Object`         | User data, throws if not authenticated   |
-| `requireAdmin()`       | `Object`         | User data, throws if not admin           |
-| `hasRole(roleKey)`     | `boolean`        | Checks if the user has a role            |
-| `requireRole(roleKey)` | `Object`         | User data, throws if the role is missing |
+| Helper                 | Returns                | Description                              |
+| ---------------------- | ---------------------- | ---------------------------------------- |
+| `getSession()`         | `JWTPayload \| null`   | Raw JWT payload                          |
+| `getUser()`            | `GateUser \| null`     | Formatted user data                      |
+| `isAuthenticated()`    | `boolean`              | Whether a session exists                 |
+| `requireAuth()`        | `GateUser`             | User data, throws if not authenticated   |
+| `requireAdmin()`       | `GateUser`             | User data, throws if not admin           |
+| `hasRole(roleKey)`     | `boolean`              | Checks if the user has a role            |
+| `requireRole(roleKey)` | `GateUser`             | User data, throws if the role is missing |
 
 All functions are cached per request using `React.cache()`.
 
@@ -367,13 +510,13 @@ Generates the URL for the local logout endpoint.
 
 Creates a reusable configuration that encapsulates `getLoginUrl` and `getLogoutUrl`.
 
-```js
+```ts
 import { createAuthConfig } from "@am25/gate-next";
 
 const auth = createAuthConfig({
-  issuer: process.env.NEXT_PUBLIC_GATE_ISSUER,
-  clientId: process.env.NEXT_PUBLIC_GATE_CLIENT_ID,
-  redirectUri: process.env.NEXT_PUBLIC_GATE_REDIRECT_URI,
+  issuer: process.env.NEXT_PUBLIC_GATE_ISSUER!,
+  clientId: process.env.NEXT_PUBLIC_GATE_CLIENT_ID!,
+  redirectUri: process.env.NEXT_PUBLIC_GATE_REDIRECT_URI!,
   scopes: ["openid", "profile", "email", "roles"],
 });
 
@@ -398,6 +541,25 @@ Clears the JWKS public key cache. Useful if Gate rotates its keys.
 | Parameter | Type   | Required | Description                              |
 | --------- | ------ | -------- | ---------------------------------------- |
 | `issuer`  | string | No       | Issuer URL. If omitted, clears all cache |
+
+## Exported types
+
+All option interfaces and return types are exported for use in your own code:
+
+```ts
+import type {
+  GateUser,
+  SessionHelpers,
+  SessionHelpersOptions,
+  GateProxyOptions,
+  CallbackHandlerOptions,
+  LogoutHandlerOptions,
+  LoginUrlOptions,
+  LogoutUrlOptions,
+  AuthConfig,
+  AuthConfigOptions,
+} from "@am25/gate-next";
+```
 
 ## Authentication flow
 
