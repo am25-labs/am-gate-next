@@ -3,16 +3,21 @@
   "version": "1.0.2",
   "description": "AM25 Gate (OAuth2+OIDC Authentication) SDK for Next.js",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "default": "./src/index.js"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
-    "src"
+    "dist"
   ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "pnpm build"
+  },
   "author": {
     "name": "Alejandro Mártir",
     "url": "https://alemartir.com"
@@ -46,5 +51,11 @@
     "am25",
     "gate"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "25.5.0",
+    "@types/react": "19.2.14",
+    "next": "16.1.7",
+    "typescript": "5.9.3"
+  }
 }

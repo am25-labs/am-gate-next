@@ -1,19 +1,17 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
-/**
- * Create the handler for /api/auth/callback
- *
- * @param {Object} options
- * @param {string} options.issuer - Gate server URL (e.g., "https://gate.example.com")
- * @param {string} options.clientId - Client ID of the app
- * @param {string} options.clientSecret - Client Secret of the app
- * @param {string} options.redirectUri - Callback URI (must match Gate)
- * @param {string} options.cookieName - Cookie name (default: "am25_sess")
- * @param {string} options.cookieDomain - Cookie domain (e.g., ".example.com")
- * @param {number} options.cookieMaxAge - Duration in seconds (default: 7 days)
- * @param {string} options.defaultRedirect - Default route after login (default: "/dashboard")
- */
-export function createCallbackHandler(options) {
+export interface CallbackHandlerOptions {
+  issuer: string;
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  cookieName?: string;
+  cookieDomain?: string;
+  cookieMaxAge?: number;
+  defaultRedirect?: string;
+}
+
+export function createCallbackHandler(options: CallbackHandlerOptions) {
   const {
     issuer,
     clientId,
@@ -21,7 +19,7 @@ export function createCallbackHandler(options) {
     redirectUri,
     cookieName = "am25_sess",
     cookieDomain,
-    cookieMaxAge = 60 * 60 * 24 * 30, // 30 days
+    cookieMaxAge = 60 * 60 * 24 * 30,
     defaultRedirect = "/dashboard",
   } = options;
 
@@ -33,7 +31,7 @@ export function createCallbackHandler(options) {
   const tokenEndpoint = `${issuer.replace(/\/$/, "")}/oauth/token`;
   const appOrigin = new URL(redirectUri).origin;
 
-  return async function handleCallback(request) {
+  return async function handleCallback(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
     const state = searchParams.get("state");
